@@ -23,7 +23,15 @@
 ;;; that you can get from one station on a line to any other station
 ;;; on that line in one TAKE-LINE operation.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/cps/subways
+  (:use #:cl #:bps/cps/search)
+  (:export
+   #:defline
+   #:defstation
+   #:clear-subway-map
+   #:setup-subway-problem))
+
+(in-package #:bps/cps/subways)
 
 ;;; First, the subway map.
 
@@ -31,19 +39,21 @@
 (defvar *lines* nil)    ;; List of symbols for line names.
 
 (defstruct (subway-station (:PRINT-FUNCTION
-			     (lambda (inst str ignore)
-			       (format str "<Station ~A>"
-				       (subway-station-name inst)))))
-	   (name nil) 
-	   (lines nil)
-	   (coordinates nil)) ;; For advanced versions of CPS
+                            (lambda (inst str ignore)
+                              (declare (ignore ignore))
+                              (format str "<Station ~A>"
+                                      (subway-station-name inst)))))
+           (name nil)
+           (lines nil)
+           (coordinates nil)) ;; For advanced versions of CPS
 
 (defstruct (subway-line (:PRINT-FUNCTION
-			  (lambda (inst str ignore)
-			    (format str "<Subway ~A>"
-				    (subway-line-name inst)))))
-	   (name nil)
-	   (stations nil))
+                         (lambda (inst str ignore)
+                           (declare (ignore ignore))
+                           (format str "<Subway ~A>"
+                                   (subway-line-name inst)))))
+           (name nil)
+           (stations nil))
 
 ;;;; Maintaining the subway map
 
@@ -52,17 +62,17 @@
 ;; The value of the symbol becomes the corresponding struct.
 
 (defmacro defline (line-name)
- `(progn (setq ,line-name (make-subway-line :NAME ',line-name))
-    (push ',line-name *lines*)))
+  `(progn (defparameter ,line-name (make-subway-line :NAME ',line-name))
+          (push ',line-name *lines*)))
 
 (defmacro defstation (name lines &optional (x 0) (y 0))
-`(progn (setq ,name (make-subway-station
-		      :NAME ',name
-		      :LINES ',lines
-		      :COORDINATES (cons ,x ,y)))
-   ,@ (mapcar #'(lambda (line)
-		  `(push ',name (subway-line-stations ,line))) lines)
-(push ',name *stations*)))
+  `(progn (defparameter ,name (make-subway-station
+                               :NAME ',name
+                               :LINES ',lines
+                               :COORDINATES (cons ,x ,y)))
+          ,@ (mapcar #'(lambda (line)
+                         `(push ',name (subway-line-stations ,line))) lines)
+             (push ',name *stations*)))
 
 (defun clear-subway-map ()
   ;; Good ecology requires removing pointers to the structs.
@@ -72,55 +82,54 @@
 
 (defun setup-subway-problem (goal-state)
   (make-problem :NAME goal-state
-		:GOAL-RECOGNIZER 
-		#'(lambda (state)
-		    (subway-states-identical? state goal-state))
-		:OPERATOR-APPLIER 'subway-operator-finder
-		:OPERATORS '(TAKE-LINE)
-		:STATES-IDENTICAL? 'subway-states-identical?
-		:PATH-FILTER 'prune-subway-path?
-		:STATE-PRINTER #'(lambda (f) (format nil "~A" f))
-		:SOLUTION-ELEMENT-PRINTER 'print-path-element
-		:DISTANCE-REMAINING
-		#'(lambda (state)
-		    (subway-distance state `(,goal-state)))))
+                :GOAL-RECOGNIZER
+                #'(lambda (state)
+                    (subway-states-identical? state goal-state))
+                :OPERATOR-APPLIER 'subway-operator-finder
+                :OPERATORS '(TAKE-LINE)
+                :STATES-IDENTICAL? 'subway-states-identical?
+                :PATH-FILTER 'prune-subway-path?
+                :STATE-PRINTER #'(lambda (f) (format nil "~A" f))
+                :SOLUTION-ELEMENT-PRINTER 'print-path-element
+                :DISTANCE-REMAINING
+                #'(lambda (state)
+                    (subway-distance state `(,goal-state)))))
 
 ;;; Procedures for CPS interface
 
-(defun subway-states-identical? (state1 state2) (eq state1 state2)) 
+(defun subway-states-identical? (state1 state2) (eq state1 state2))
 
 (defun subway-operator-finder (state ignore &aux sprouts)
-;;; Look up the lines that the station is on, and return
-;;; the list of stations on that line.
-(dolist (line (subway-station-lines (symbol-value state))
-	      sprouts)
-  (dolist (station (remove state
-                    (subway-line-stations (symbol-value line))))
-   (push (cons `(TAKE-LINE ,state ,line ,station) station)
-	 sprouts))))
+  (declare (ignore ignore))
+  ;; Look up the lines that the station is on, and return
+  ;; the list of stations on that line.
+  (dolist (line (subway-station-lines (symbol-value state))
+           sprouts)
+    (dolist (station (remove state
+                             (subway-line-stations (symbol-value line))))
+      (push (cons `(TAKE-LINE ,state ,line ,station) station)
+            sprouts))))
 
 (defun prune-subway-path? (path)
   ; Flushes those paths which use the same subway line
   ; twice in a row.   Such solutions are scenic but silly.
     (eq (caddr (cadr (path-so-far path)))
-	(caddr (cadr (cddr (path-so-far path))))))
+        (caddr (cadr (cddr (path-so-far path))))))
 
 (defun print-path-element (from-state take-line)
   (format NIL "Take the ~A to ~A."
-	  (caddr take-line) from-state))
+          (caddr take-line) from-state))
 
 ;;;; For CPS variants that use distance estimates.
 
 (defun subway-distance (path1 path2)
-;;; Uses Euclidean distance between grid coordinates
+  ;; Uses Euclidean distance between grid coordinates
   (labels ((sqr (x) (* x x)))
-  (sqrt (+ (sqr (- (car (subway-station-coordinates
-			  (symbol-value (car path1))))
-		  (car (subway-station-coordinates
-			 (symbol-value (car path2))))))
-	     (sqr (- (cdr (subway-station-coordinates
-			    (symbol-value (car path1))))
-		  (cdr (subway-station-coordinates
-			 (symbol-value (car path2))))))))))
-
-
+    (sqrt (+ (sqr (- (car (subway-station-coordinates
+                           (symbol-value (car path1))))
+                     (car (subway-station-coordinates
+                           (symbol-value (car path2))))))
+             (sqr (- (cdr (subway-station-coordinates
+                           (symbol-value (car path1))))
+                     (cdr (subway-station-coordinates
+                           (symbol-value (car path2))))))))))

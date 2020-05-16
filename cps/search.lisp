@@ -23,19 +23,50 @@ nothing about states, but define the problem space in terms of a set
 of procedures.
 |#
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/cps/search
+  (:use #:cl)
+  (:export
+   #:*debug-cps*
+   #:problem
+   #:problem-p
+   #:copy-problem
+   #:make-problem
+   #:pr-name
+   #:pr-goal-recognizer
+   #:pr-operator-applier
+   #:pr-operators
+   #:pr-states-identical?
+   #:pr-path-filter
+   #:pr-distance-remaining
+   #:pr-state-printer
+   #:pr-solution-element-printer
+   #:path
+   #:path-p
+   #:copy-path
+   #:make-path
+   #:path-pr
+   #:path-current
+   #:path-so-far
+   #:path-distance
+   #:bsolve
+   #:extend-path
+   #:path-has-loop?
+   #:print-new-paths
+   #:print-answer))
+
+(in-package #:bps/cps/search)
 
 (defvar *debug-cps* nil) ;; prints extra information for debugging.
 
 (defstruct (problem (:PRINT-FUNCTION
-		     (lambda (pr str ignore)
-		       (format str "<Problem: ~A>" (pr-name pr))))
-		    (:CONC-NAME pr-))
+                     (lambda (pr str ignore)
+                       (format str "<Problem: ~A>" (pr-name pr))))
+                    (:CONC-NAME pr-))
   name  ;; Something recognizable by user (person or system)
   (goal-recognizer nil)
   ;; Procedure which returns nil if argument state isn't a goal
   (operator-applier nil)
-  ;; Finds all ways an operator can apply to a state. 
+  ;; Finds all ways an operator can apply to a state.
   ;; Result is a list ((<operator instance> . <new state>)...)
   (operators nil) ;; List of operators which may be used.
   (states-identical? nil)
@@ -52,9 +83,9 @@ of procedures.
   )
 
 (defstruct (path (:PRINT-FUNCTION
-		 (lambda (inst str ignore)
-		  (format str "<path ~a>" 
-			(path-current inst)))))
+                 (lambda (inst str ignore)
+                  (format str "<path ~a>"
+                        (path-current inst)))))
   (pr nil)            ; The problem it is part of.
   (current nil)       ; The current state
   (so-far nil)        ; Alternating states and operator instances
@@ -66,21 +97,21 @@ of procedures.
 
 (defun bsolve (initial pr)
   (do ((queue (list (make-path :CURRENT initial
-			       :SO-FAR (list initial)
-			       :PR pr))
-	      (append (cdr queue) new-paths))
+                               :SO-FAR (list initial)
+                               :PR pr))
+              (append (cdr queue) new-paths))
        (new-paths nil nil)
        (number-examined 1 (1+ number-examined))) ;gather statistics
       ((null queue))
     (when (funcall (pr-goal-recognizer pr) (path-current (car queue)))
-      (when *debug-cps* 
-	(format t "~% CPS: Found goal state: ~A"
-		(funcall (pr-state-printer pr) (path-current (car queue)))))
-      (return (values (car queue) number-examined)))	
+      (when *debug-cps*
+        (format t "~% CPS: Found goal state: ~A"
+                (funcall (pr-state-printer pr) (path-current (car queue)))))
+      (return (values (car queue) number-examined)))
     (setq new-paths (extend-path (car queue)))
     (when *debug-cps*
       (format t "~% CPS: State explored: ~A"
-	      (funcall (pr-state-printer pr) (path-current (car queue))))
+              (funcall (pr-state-printer pr) (path-current (car queue))))
       (format t "~% CPS: New operator instances:")
       (print-new-paths new-paths))))
 
@@ -90,21 +121,21 @@ of procedures.
   (setq pr (path-pr path))
   (dolist (op (pr-operators pr) new-paths)
    (dolist (op-pair (funcall (pr-operator-applier pr)
-			     (path-current path)
-			     op))
-	   ;; There can be more than one instantiation of the operator
-	   ;; for each state, hence this inner loop.
-	   (setq new-path (make-path
-			   :PR (path-pr path)
-			   :CURRENT (cdr op-pair) ;new state
-			   :SO-FAR (cons (cdr op-pair) 
-					 (cons (car op-pair) ;op instance
-					       (path-so-far path)))))
-	   (unless (path-has-loop? new-path) ;avoid loops
-		   (unless (and (pr-path-filter pr)
-				;use domain guidance if available
-				(funcall (pr-path-filter pr) new-path))
-			   (push new-path new-paths))))))
+                             (path-current path)
+                             op))
+           ;; There can be more than one instantiation of the operator
+           ;; for each state, hence this inner loop.
+           (setq new-path (make-path
+                           :PR (path-pr path)
+                           :CURRENT (cdr op-pair) ;new state
+                           :SO-FAR (cons (cdr op-pair)
+                                         (cons (car op-pair) ;op instance
+                                               (path-so-far path)))))
+           (unless (path-has-loop? new-path) ;avoid loops
+                   (unless (and (pr-path-filter pr)
+                                ;use domain guidance if available
+                                (funcall (pr-path-filter pr) new-path))
+                           (push new-path new-paths))))))
 
 (defun path-has-loop? (ipath)
   ;;Go backwards down path to see if a state is
@@ -114,7 +145,7 @@ of procedures.
        (pr (path-pr ipath)))
       ((null path))
     (if (funcall (pr-states-identical? pr) state (car path))
-	(return t))))
+        (return t))))
 
 (defun print-new-paths (new-paths)
   (dolist (new-path new-paths)
@@ -122,14 +153,14 @@ of procedures.
   (format t "."))
 
 (defun print-answer (path &optional (stream *standard-output*)
-			 &aux rpath pr)
+                         &aux rpath pr)
   (setq rpath (reverse (path-so-far path))
-	pr (path-pr path))
+        pr (path-pr path))
   (format stream "~%Initial state: ~A."
-	  (funcall (pr-state-printer pr) (car rpath)))
+          (funcall (pr-state-printer pr) (car rpath)))
   (do ((path (cdr rpath) (cddr path))
        (step 1 (1+ step)))
       ((null path) (format stream "~% Done."))
     (format stream "~%~D.  ~A" step
-	    (funcall (pr-solution-element-printer pr)
-		     (cadr path) (car path)))))
+            (funcall (pr-solution-element-printer pr)
+                     (cadr path) (car path)))))

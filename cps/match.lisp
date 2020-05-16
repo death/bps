@@ -22,79 +22,90 @@
 ;;;  procedure which returns non-nil if the binding satisfies it.
 ;;; Segment variables are like element variables, but start with ??.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/cps/match
+  (:use #:cl)
+  (:export
+   #:match
+   #:?
+   #:??
+   #:lookup-var
+   #:var-value
+   #:substitute-in
+   #:equal?))
+
+(in-package #:bps/cps/match)
 
 ;;; The entry point is MATCH, which takes a pattern, an expression,
 ;;; and an alist of bindings.
 
 (defun match (pat dat &optional (dict nil))
   (cond ((eq dict :FAIL) :FAIL) ;; Propagate lossage
-	((eq pat dat) dict)
-	((element-var? pat)
-	 (match-element-var pat dat dict))
-	((not (consp pat))
-	 (if (equal? pat dat) dict :FAIL))
-	((segment-var? (car pat))
-	 (match-segment-var pat dat dict))
-	((not (consp dat)) :FAIL)
-	(t (match (cdr pat) (cdr dat)
-		  (match (car pat) (car dat) dict)))))
+        ((eql pat dat) dict)
+        ((element-var? pat)
+         (match-element-var pat dat dict))
+        ((not (consp pat))
+         (if (equal? pat dat) dict :FAIL))
+        ((segment-var? (car pat))
+         (match-segment-var pat dat dict))
+        ((not (consp dat)) :FAIL)
+        (t (match (cdr pat) (cdr dat)
+                  (match (car pat) (car dat) dict)))))
 
 (defun match-element-var (pat dat dict &aux entry pred)
   (setq entry (lookup-var pat dict))
-  (cond (entry 
-	 (if (equal? (cadr entry) dat) dict :FAIL))
-	(t (setq pred (var-restriction pat))
-	   (cond ((or (not pred)
-		      (funcall pred dat))
-		  (bind-element-var (var-name pat) dat dict))
-		 (t :FAIL)))))
+  (cond (entry
+         (if (equal? (cadr entry) dat) dict :FAIL))
+        (t (setq pred (var-restriction pat))
+           (cond ((or (not pred)
+                      (funcall pred dat))
+                  (bind-element-var (var-name pat) dat dict))
+                 (t :FAIL)))))
 
 (defvar *tol* 1.0e-6)
 
 (defun equal? (a b)
   (cond ((and (floatp a) (floatp b)) (< (abs (- a b)) *tol*))
-	(t (equal a b))))
+        (t (equal a b))))
 
 ;;;; Finding matches for segment variables
 ;; This is non-deterministic, hence requires iteration.
 
-(defun match-segment-var (pat dat dict &aux entry pred end rest)
+(defun match-segment-var (pat dat dict &aux entry rest)
   (setq entry (lookup-var (car pat) dict))
   (cond (entry ;; check for match
-         (setq rest 
-	       (check-segment dat (segment-beg entry)
-			      (segment-end entry)))
-	 (if (eq rest :FAIL) :FAIL
-	     (match (cdr pat) rest dict)))
-	(t ;; Search for alternate segment bindings
-	 (try-segment-bindings (car pat) (cdr pat) dat dict))))
+         (setq rest
+               (check-segment dat (segment-beg entry)
+                              (segment-end entry)))
+         (if (eq rest :FAIL) :FAIL
+             (match (cdr pat) rest dict)))
+        (t ;; Search for alternate segment bindings
+         (try-segment-bindings (car pat) (cdr pat) dat dict))))
 
 (defun check-segment (dat beg end)
   (cond ((eq beg end) dat)
-	((not (consp dat)) :FAIL)
-	((equal? (car dat) (car beg))
-	 (check-segment (cdr dat) (cdr beg) end))
-	(t :FAIL)))
+        ((not (consp dat)) :FAIL)
+        ((equal? (car dat) (car beg))
+         (check-segment (cdr dat) (cdr beg) end))
+        (t :FAIL)))
 
 (defun try-segment-bindings (var pat dat dict &aux name pred beg)
   (setq name (var-name var)
-	pred (var-restriction var)
-	beg dat)
+        pred (var-restriction var)
+        beg dat)
   (do ((end dat (cdr end))
        (ndict nil))
       ((null end)
        (cond ((or (null pred)
-		  (funcall pred (segment->list beg nil)))
-	      (match pat nil ;; Try the very end
-		     (bind-segment-var name beg nil dict)))
-	     (t :FAIL)))
+                  (funcall pred (segment->list beg nil)))
+              (match pat nil ;; Try the very end
+                     (bind-segment-var name beg nil dict)))
+             (t :FAIL)))
     (when (or (null pred)
-	      (funcall pred (segment->list beg end)))
-      (setq ndict (match pat end 
-			 (bind-segment-var name beg end dict)))
+              (funcall pred (segment->list beg end)))
+      (setq ndict (match pat end
+                         (bind-segment-var name beg end dict)))
       (unless (eq ndict :FAIL)
-	      (return-from TRY-SEGMENT-BINDINGS ndict)))))
+              (return-from TRY-SEGMENT-BINDINGS ndict)))))
 
 ;;;; Defining variables
 
@@ -115,7 +126,7 @@
   (setq entry (lookup-var var dict))
   (unless entry (error "Not bound variable: ~A, ~A." var dict))
   (cond ((= (length entry) 2) (cadr entry)) ;; element variable
-	(t (segment->list (cadr entry) (caddr entry)))))
+        (t (segment->list (cadr entry) (caddr entry)))))
 
 (defun segment-beg (entry) (cadr entry))
 (defun segment-end (entry) (caddr entry))
@@ -135,17 +146,16 @@
 ;; Performing substitutions
 (defun substitute-in (exp dict)
   (cond ((null exp) nil)
-	((element-var? exp) (var-value exp dict))
-	((consp exp)
-	 (cond ((segment-var? (car exp))
-		(append (var-value (car exp) dict)
-			(substitute-in (cdr exp) dict)))
-	       ((eq (car exp) :EVAL)
-		(eval (substitute-in (cadr exp) dict)))
-	       ((and (consp (car exp)) (eq (caar exp) :SPLICE))
-		(append (substitute-in (cadar exp) dict)
-			(substitute-in (cdr exp) dict)))
-	       (t (cons (substitute-in (car exp) dict)
-			(substitute-in (cdr exp) dict)))))
-	(t exp)))
-
+        ((element-var? exp) (var-value exp dict))
+        ((consp exp)
+         (cond ((segment-var? (car exp))
+                (append (var-value (car exp) dict)
+                        (substitute-in (cdr exp) dict)))
+               ((eq (car exp) :EVAL)
+                (eval (substitute-in (cadr exp) dict)))
+               ((and (consp (car exp)) (eq (caar exp) :SPLICE))
+                (append (substitute-in (cadar exp) dict)
+                        (substitute-in (cdr exp) dict)))
+               (t (cons (substitute-in (car exp) dict)
+                        (substitute-in (cdr exp) dict)))))
+        (t exp)))

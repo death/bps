@@ -11,7 +11,13 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/cps/boston
+  (:use #:cl
+        #:bps/cps/subways
+        #:bps/cps/search
+        #:bps/cps/variants))
+
+(in-package #:bps/cps/boston)
 
 ;;;   (Note: this map is quite sketchy)
 (defline Red-Line)

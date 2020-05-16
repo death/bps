@@ -13,13 +13,22 @@
 
 ;;; This version is inspired by one of G.J. Sussman's scheme matchers.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/cps/simplify
+  (:use #:cl #:bps/cps/match)
+  (:export
+   #:*algebra-rules*
+   #:simplify
+   #:sqr))
+
+(in-package #:bps/cps/simplify)
 
 (defvar *simplify-cache* (make-hash-table :TEST #'equal))
 
+(defvar *algebra-rules*)
+
 (defun simplify (exp)
   (or (gethash exp *simplify-cache*)
-      (setf (gethash exp *simplify-cache*) 
+      (setf (gethash exp *simplify-cache*)
 	    (simplify-it exp *algebra-rules*))))
 
 (defun simplify-it (exp rules &aux result)
@@ -69,7 +78,7 @@
 	(t (error "alg< cannot compare these: ~A, ~A." e1 e2))))
 
 (defun alg= (e1 e2) (not (or (alg< e1 e2) (alg< e2 e1))))
- 
+
 (defun sorted? (list pred)
   (cond ((or (null list) (null (cdr list))) t)
 	((funcall pred (cadr list) (car list)) nil)
@@ -84,51 +93,51 @@
 
 (defun zero? (exp) (same-constant? exp 0))
 (defun one? (exp) (same-constant? exp 1))
+
+(defun sort* (seq pred)
+  (sort (copy-seq seq) pred))
 
 ;;;; Rules for algebraic simplification
 
-(setq *algebra-rules* `(
-
-;; Flush degenerate cases
-(((? op +/*?) (? e)) (? e))
-((+ (? zero zero?) (?? e)) (+ (?? e)))
-((- (? zero zero?) (? e)) (- (? e)))
-((- (? e) (? zero zero?)) (? e))
-((- (? e) (? e)) 0)
-((* (? one one?) (?? e)) (* (?? e)))
-((* (? zero zero?) (?? e)) 0)
-((expt (? e) (? zero zero?)) 1)
-((expt (? e) (? one one?)) (? e))
-((log (? one one?) (? base)) 0)
-((log (? base) (? base)) 1)
-((log (expt (? base) (? val)) (? base)) (? val))
-((expt (? base) (log (? val) (? base))) (? val))
-;; Equivalences involving powers
-((* (? e) (? e)) (sqr (? e)))
-((expt (? e) (? two ,#'(lambda (exp) (same-constant? exp 2))))
- (sqr (? e)))
-((sqrt (sqr (? e))) (abs (? e)))
-((sqr (sqrt (? e))) (? e))
-
-;; Combine numerical constants
-(((? op +/*?) (? e1 numberp) (? e2 numberp) (?? e3))
- nil
- ((? op) (:EVAL ((? op) (? e1) (? e2))) (?? e3)))
-((- (? e1 numberp) (? e2 numberp)) (:EVAL (- (? e1) (? e2))))
-((- (? e1 numberp)) (:EVAL (- (? e1))))
-((sqr (? e1 numberp)) (:EVAL (* (? e1)  (? e1))))
-((sqrt (? e1 numberp)) (:EVAL (sqrt (? e1))))
-((expt (? e1 numberp) (? e2 numberp)) (:EVAL (expt (? e1) (? e2))))
-((/ (? e1 numberp) (? e2 numberp)) (:EVAL (/ (? e1) (? e2))))
-((abs (? e numberp)) (:EVAL (abs (? e))))
-((log (? x numberp) (? base numberp)) 
- (:EVAL (/ (log (? x)) (log (? base)))))
-;; Flatten +,*
-(((? op +/*?) (?? e1) ((? op) (?? e2) (?? e3)))
- ((? op) (?? e1) (?? e2) (?? e3)))
-(((? op +/*?) ((? op) (?? e1) (?? e2)) (?? e3))
- ((? op) (?? e1) (?? e2) (?? e3)))
-;; Canonicalize +,*
-(((? op +/*?) (?? terms
-		  ,#'(lambda (terms) (not (sorted? terms #'alg<)))))
- ((? op) (:SPLICE (:EVAL (sort (quote (? terms)) #'alg<)))))))
+(setf *algebra-rules*
+  `(;; Flush degenerate cases
+    (((? op +/*?) (? e)) (? e))
+    ((+ (? zero zero?) (?? e)) (+ (?? e)))
+    ((- (? zero zero?) (? e)) (- (? e)))
+    ((- (? e) (? zero zero?)) (? e))
+    ((- (? e) (? e)) 0)
+    ((* (? one one?) (?? e)) (* (?? e)))
+    ((* (? zero zero?) (?? e)) 0)
+    ((expt (? e) (? zero zero?)) 1)
+    ((expt (? e) (? one one?)) (? e))
+    ((log (? one one?) (? base)) 0)
+    ((log (? base) (? base)) 1)
+    ((log (expt (? base) (? val)) (? base)) (? val))
+    ((expt (? base) (log (? val) (? base))) (? val))
+    ;; Equivalences involving powers
+    ((* (? e) (? e)) (sqr (? e)))
+    ((expt (? e) (? two ,#'(lambda (exp) (same-constant? exp 2))))
+     (sqr (? e)))
+    ((sqrt (sqr (? e))) (abs (? e)))
+    ((sqr (sqrt (? e))) (? e))
+    ;; Combine numerical constants
+    (((? op +/*?) (? e1 numberp) (? e2 numberp) (?? e3))
+     ((? op) (:EVAL ((? op) (? e1) (? e2))) (?? e3)))
+    ((- (? e1 numberp) (? e2 numberp)) (:EVAL (- (? e1) (? e2))))
+    ((- (? e1 numberp)) (:EVAL (- (? e1))))
+    ((sqr (? e1 numberp)) (:EVAL (* (? e1)  (? e1))))
+    ((sqrt (? e1 numberp)) (:EVAL (sqrt (? e1))))
+    ((expt (? e1 numberp) (? e2 numberp)) (:EVAL (expt (? e1) (? e2))))
+    ((/ (? e1 numberp) (? e2 numberp)) (:EVAL (/ (? e1) (? e2))))
+    ((abs (? e numberp)) (:EVAL (abs (? e))))
+    ((log (? x numberp) (? base numberp))
+     (:EVAL (/ (log (? x)) (log (? base)))))
+    ;; Flatten +,*
+    (((? op +/*?) (?? e1) ((? op) (?? e2) (?? e3)))
+     ((? op) (?? e1) (?? e2) (?? e3)))
+    (((? op +/*?) ((? op) (?? e1) (?? e2)) (?? e3))
+     ((? op) (?? e1) (?? e2) (?? e3)))
+    ;; Canonicalize +,*
+    (((? op +/*?) (?? terms
+		      ,#'(lambda (terms) (not (sorted? terms #'alg<)))))
+     ((? op) (:SPLICE (:EVAL (sort* (quote (? terms)) #'alg<)))))))
