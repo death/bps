@@ -2,8 +2,12 @@
 ;;;; | Building Problem Solvers                                       |
 ;;;; +----------------------------------------------------------------+
 
-(uiop:define-package #:bps/all
-  (:nicknames #:bps)
+(uiop:define-package #:bps/tre/all
+  (:nicknames #:bps/tre)
   (:use-reexport
-   #:bps/cps/all
-   #:bps/tre/all))
+   #:bps/tre/unify
+   #:bps/tre/tinter
+   #:bps/tre/data
+   #:bps/tre/rules)
+  (:use
+   #:bps/tre/treex1))

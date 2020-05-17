@@ -11,7 +11,23 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/tre/rules
+  (:use #:cl #:bps/tre/tinter #:bps/tre/data #:bps/tre/unify)
+  (:export
+   #:rule
+   #:rule-p
+   #:rule-counter
+   #:rule-dbclass
+   #:rule-trigger
+   #:rule-body
+   #:rule-environment
+   #:show-rules
+   #:rule
+   #:add-rule
+   #:try-rules
+   #:run-rules))
+
+(in-package #:bps/tre/rules)
 
 ;;; Rules have the form (rule <trigger> . <body>).
 ;; Whenever a pattern arrives in the database which unifies with
@@ -19,10 +35,10 @@
 ;; rule is dequeued, the body is evaluated in the environment
 ;; defined by the unification.  Importantly, rules can be nested.
 
-(proclaim '(special *TRE* *ENV*)) 
-(defvar *ENV* nil)		; Environment for rules
+(proclaim '(special *TRE* *ENV*))
 
 (defstruct (rule (:PRINT-FUNCTION (lambda (r st ignore)
+                                    (declare (ignore ignore))
 				    (format st "<Rule ~D>"
 					    (rule-counter r)))))
      counter		;Integer to provide unique "name"
@@ -36,6 +52,7 @@
 (defun show-rules (&optional (stream *standard-output*) &aux counter)
   (setq counter 0)
   (maphash #'(lambda (key dbclass)
+               (declare (ignore key))
 	       (dolist (rule (dbclass-rules dbclass))
 		       (incf counter)
 		       (format stream "~%  ")
@@ -115,4 +132,5 @@
 			       ',(sublis (cdr pair)
 					 (cdr binding))))
 			 (cdr pair))
+             (declare (ignorable ,@(mapcar #'car (cdr pair))))
 	     ,@ (car pair)))))

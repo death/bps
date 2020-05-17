@@ -11,10 +11,14 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/tre/treex1
+  (:use #:cl #:bps/tre/tinter #:bps/tre/data #:bps/tre/rules)
+  (:export))
+
+(in-package #:bps/tre/treex1)
 
 (defun ex1 (&optional (debugging nil))
-  (in-tre (create-tre "Ex1" :DEBUGGING debugging)) 
+  (in-tre (create-tre "Ex1" :DEBUGGING debugging))
   (run-forms *TRE*
     '(
       ;; A simple version of Modus Ponens
@@ -26,6 +30,8 @@
       (assert! '(implies (human Turing) (mortal Turing)))
       (assert! '(not (not (human Turing))))))
   (show-data))
+
+(defvar *parts* nil)
 
 (defun ex2 (&optional (debugging nil))
   (in-tre (create-tre "Ex2" :DEBUGGING debugging))
@@ -54,7 +60,7 @@
       (assert! '(Workstation Hal-9000))))
     (pprint *parts*))
 
-(defun ex3 (&optional (debugging nil))  
+(defun ex3 (&optional (debugging nil))
   (in-tre (create-tre "Ex3" :DEBUGGING debugging))
   ;; You may want to run this one last.
   (run-forms *TRE* '(
@@ -62,4 +68,3 @@
 	  (when (numberp ?x)
 	    (assert! `(integer ,(1+ ?x)))))
     (assert! `(integer 0)))))
-

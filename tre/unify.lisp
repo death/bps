@@ -11,7 +11,13 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/tre/unify
+  (:use #:cl)
+  (:export
+   #:variable?
+   #:unify))
+
+(in-package #:bps/tre/unify)
 
 (defun variable? (x)
   (and (symbolp x)	;A symbol whose first character is "?"
@@ -41,7 +47,7 @@
 	((equal var exp) nil)
 	((variable? exp)
 	 (let ((val (assoc exp bindings)))
-	   (if val 
+	   (if val
 	       (free-in? var (cdr val) bindings)
 	     t)))
 	((not (listp exp)) t)

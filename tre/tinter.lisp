@@ -11,7 +11,31 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/tre/tinter
+  (:use #:cl)
+  (:export
+   #:tre
+   #:tre-p
+   #:tre-title
+   #:tre-dbclass-table
+   #:tre-debugging
+   #:tre-queue
+   #:tre-rule-counter
+   #:tre-rules-run
+   #:*tre*
+   #:with-tre
+   #:in-tre
+   #:debugging-tre
+   #:create-tre
+   #:debug-tre
+   #:run
+   #:run-rules
+   #:run-forms
+   #:show
+   #:show-data
+   #:show-rules))
+
+(in-package #:bps/tre/tinter)
 
 ;; Includes user hooks (for people and programs).
 
@@ -24,6 +48,7 @@
   (rules-run 0))            ; Statistics
 
 (defun tre-printer (tre st ignore)
+  (declare (ignore ignore))
   (format st "<TRE: ~A>" (tre-title tre)))
 
 (proclaim '(special *TRE*)) ;; Current TRE
@@ -47,19 +72,22 @@
 (defun debug-tre (tre debugging)
   (setf (tre-debugging tre) debugging))
 
-;;;; Drivers for programs and people  
+;;;; Drivers for programs and people
 
 (defun run (&optional (*TRE* *TRE*))
-    (format T "~%>>")
+  (format T "~%>>")
+  (let ((*package* (find-package "BPS/TRE")))
     (do ((form (read) (read)))
-        ((member form '(quit stop exit)) nil)
-        (format t "~%~A" (eval form))
-        (run-rules *tre*)  ;; Defined in RULES module
-        (format t "~%>>")))
+        ((and (symbolp form)
+              (member form '(quit stop exit) :test #'string-equal))
+         nil)
+      (format t "~%~A" (eval form))
+      (run-rules *tre*) ;; Defined in RULES module
+      (format t "~%>>"))))
 
 (defun run-forms (*TRE* forms) ;; Toplevel for programs
   (dolist (form forms)
-	  (eval form) (run-rules *TRE*)))
+    (eval form) (run-rules *TRE*)))
 
 (defun show (&optional (stream *standard-output*))
   ;; Pass on the request to both modules of default TRE

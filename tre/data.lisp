@@ -11,16 +11,36 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/tre/data
+  (:use #:cl #:bps/tre/tinter #:bps/tre/unify)
+  (:export
+   #:*env*
+   #:dbclass
+   #:dbclass-p
+   #:dbclass-name
+   #:dbclass-tre
+   #:dbclass-facts
+   #:dbclass-rules
+   #:show-data
+   #:assert!
+   #:get-dbclass
+   #:fetch
+   #:get-candidates
+   #:try-rules))
+
+(in-package #:bps/tre/data)
 
 ;; This simple version uses "car indexing" to store facts and rules
 ;; which might match.  Unification provides the actual matching.
 
 (proclaim '(special *TRE* *ENV*))
 
+(defvar *ENV* nil)		; Environment for rules
+
 (defstruct (dbclass (:PRINT-FUNCTION (lambda (d st ignore)
-				     (format st "<Dbclass ~D>"
-					     (dbclass-name d)))))
+                                       (declare (ignore ignore))
+                                       (format st "<Dbclass ~D>"
+                                               (dbclass-name d)))))
      name		;a symbol
      tre                ;The TRE it belongs to
      facts		;facts of this dbclass
@@ -29,6 +49,7 @@
 (defun show-data (&optional (stream *standard-output*) &aux counter)
   (setq counter 0)
   (maphash #'(lambda (key dbclass)
+               (declare (ignore key))
 	       (dolist (datum (dbclass-facts dbclass))
 		       (incf counter)
 		       (format stream "~%~A" datum)))
