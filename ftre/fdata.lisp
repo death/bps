@@ -11,7 +11,28 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/ftre/fdata
+  (:use #:cl #:bps/ftre/unify #:bps/ftre/finter)
+  (:export
+   #:dbclass
+   #:dbclass-p
+   #:make-dbclass
+   #:dbclass-name
+   #:dbclass-ftre
+   #:dbclass-facts
+   #:dbclass-rules
+   #:show-data
+   #:assert!
+   #:rassert!
+   #:insert
+   #:get-dbclass
+   #:fetch
+   #:get-candidates
+   #:map-dbclass
+   #:try-rules
+   #:quotize))
+
+(in-package #:bps/ftre/fdata)
 
 ;; An assertion is just the lisp form itself.
 ;; The "dbclass" of an assertion is the leftmost constant
@@ -19,31 +40,32 @@
 ;; and data.
 
 (defstruct (dbclass (:PRINT-FUNCTION print-dbclass-struct))
-     name		;a symbol
+     name               ;a symbol
      ftre               ;ftre it belongs to
-     facts		;facts of this dbclass
-     rules)		;rules applicable to this dbclass
+     facts              ;facts of this dbclass
+     rules)             ;rules applicable to this dbclass
 
 (defun print-dbclass-struct (cl st ignore)
   (declare (ignore ignore))
   (format st "<Dbclass ~D>" (dbclass-name cl)))
 
 (defun show-data (&optional (stream *standard-output*)
-			    &aux counter)
+                            &aux counter)
   (setq counter 0)
   (format stream "~%In global context: ")
   (maphash #'(lambda (key dbclass)
-	       (dolist (datum (dbclass-facts dbclass))
-		       (incf counter)
-		       (format stream "~%~A" datum)))
-	   (ftre-dbclass-table *ftre*))
+               (declare (ignore key))
+               (dolist (datum (dbclass-facts dbclass))
+                       (incf counter)
+                       (format stream "~%~A" datum)))
+           (ftre-dbclass-table *ftre*))
   (format stream "~%  ~D assertions in global context."
-	  counter)
+          counter)
   (when (> (ftre-depth *ftre*) 0)
-	(format stream "~% In current context:")
-	(dolist (datum (reverse (ftre-local-data *ftre*)))
-		(unless (numberp datum) (incf counter))
-		(format stream "~% ~A." datum)))
+        (format stream "~% In current context:")
+        (dolist (datum (reverse (ftre-local-data *ftre*)))
+                (unless (numberp datum) (incf counter))
+                (format stream "~% ~A." datum)))
   counter)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -58,47 +80,47 @@
   (when (null fact) (error "~% Can't assert NIL."))
   (setq dbclass (get-dbclass fact ftre))
   (cond ((member fact (dbclass-facts dbclass)
-		 :TEST #'equal) nil)
-	((= (ftre-depth ftre) 0)
-	 (push fact (dbclass-facts dbclass)))
-	((member fact (ftre-local-data ftre)
-		 :TEST #'equal) nil)
-	(t (push fact (ftre-local-data *ftre*)))))
+                 :TEST #'equal) nil)
+        ((= (ftre-depth ftre) 0)
+         (push fact (dbclass-facts dbclass)))
+        ((member fact (ftre-local-data ftre)
+                 :TEST #'equal) nil)
+        (t (push fact (ftre-local-data *ftre*)))))
 
 (defun get-dbclass (fact ftre &aux dbclass)
   (cond ((null fact) (error "~% NIL can't be a dbclass."))
-	((listp fact) (get-dbclass (car fact) ftre))
-	((variable? fact) ;; *ENV* is no longer used.
-	 (cond ((boundp fact)
-		(get-dbclass (symbol-value fact) ftre))
-	       (t (error "~%Dbclass unbound: ~A" fact))))
-	((symbolp fact)
-	 (cond ((gethash fact (ftre-dbclass-table ftre)))
-	       (t (setq dbclass
-			(make-dbclass :NAME fact :FTRE ftre 
-				    :FACTS nil :RULES nil))
-		  (setf (gethash
-			 fact (ftre-dbclass-table ftre))
-			dbclass)
-		  dbclass)))
-	(t (error "Bad dbclass type: ~A" fact))))
+        ((listp fact) (get-dbclass (car fact) ftre))
+        ((variable? fact) ;; *ENV* is no longer used.
+         (cond ((boundp fact)
+                (get-dbclass (symbol-value fact) ftre))
+               (t (error "~%Dbclass unbound: ~A" fact))))
+        ((symbolp fact)
+         (cond ((gethash fact (ftre-dbclass-table ftre)))
+               (t (setq dbclass
+                        (make-dbclass :NAME fact :FTRE ftre
+                                    :FACTS nil :RULES nil))
+                  (setf (gethash
+                         fact (ftre-dbclass-table ftre))
+                        dbclass)
+                  dbclass)))
+        (t (error "Bad dbclass type: ~A" fact))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Retrieving data
 
 (defun fetch (pattern &optional (*ftre* *ftre*)
-		      &aux bindings unifiers)
+                      &aux bindings unifiers)
   (dolist (candidate (get-candidates pattern *ftre*)
-		     unifiers)
+                     unifiers)
     (setq bindings (unify pattern candidate))
     (unless (eq bindings :FAIL)
       (push (sublis bindings pattern) unifiers))))
 
 (defun get-candidates (pattern ftre)
   (append (ftre-local-data ftre)
-	  (dbclass-facts (get-dbclass pattern ftre))))
+          (dbclass-facts (get-dbclass pattern ftre))))
 
 (defun map-dbclass (proc &optional (*FTRE* *FTRE*))
   (maphash #'(lambda (name dbclass) (declare (ignore name))
-	       (funcall proc dbclass))
-	   (ftre-dbclass-table *FTRE*)))
+               (funcall proc dbclass))
+           (ftre-dbclass-table *FTRE*)))

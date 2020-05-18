@@ -50,12 +50,12 @@
       (rassert! (show ?p)))
 
 (a-rule ((show (implies ?p ?q)) ;; Conditional Introduction
-	 :TEST (not (fetch `(implies ,?p ,?q))))
+         :TEST (not (fetch `(implies ,?p ,?q))))
     (debug-nd "~%~D: Trying CI on (implies ~A ~A)."
-	      (ftre-depth *ftre*) ?p ?q)
+              (ftre-depth *ftre*) ?p ?q)
     (when (seek-in-context ?p `(or ,?q contradiction))
       (debug-nd "~%~D: CI: (implies ~A ~A)"
-		(ftre-depth *ftre*) ?p ?q)
+                (ftre-depth *ftre*) ?p ?q)
       (rassert! (implies ?p ?q))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -63,8 +63,8 @@
 
 (rule ((and . ?conjuncts)) ;AND elimination
       (dolist (conjunct ?conjuncts)
-	(debug-nd "~%~D: AE: ~A" (ftre-depth *ftre*) conjunct)
-	(assert! conjunct)))
+        (debug-nd "~%~D: AE: ~A" (ftre-depth *ftre*) conjunct)
+        (assert! conjunct)))
 
 (rule ((show (and ?c1 ?c2)))
       (rassert! (show ?c1))
@@ -90,15 +90,15 @@
 (rule ((show (iff ?p ?q)) ;IFF introduction
        :TEST (not (fetch `(iff ,?p ,?q))))
     (debug-nd "~%~D: BI-BC: (show (implies ~A ~A))"
-			   (ftre-depth *ftre*) ?p ?q)
-    (debug-nd "~%~D: BI-BC: (show (implies ~A ~A))" 
-	      (ftre-depth *ftre*) ?q ?p)
+                           (ftre-depth *ftre*) ?p ?q)
+    (debug-nd "~%~D: BI-BC: (show (implies ~A ~A))"
+              (ftre-depth *ftre*) ?q ?p)
     (rassert! (show (implies ?p ?q)))
     (rassert! (show (implies ?q ?p)))
     (rule ((implies ?p ?q) (implies ?q ?p))
-	  (debug-nd "~%~D: BI: ~A"
-		    (ftre-depth *ftre*) `(iff ,?p ,?q))
-	  (rassert! (iff ?p ?q))))
+          (debug-nd "~%~D: BI: ~A"
+                    (ftre-depth *ftre*) `(iff ,?p ,?q))
+          (rassert! (iff ?p ?q))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Dealing with negation
@@ -108,10 +108,10 @@
       (rassert! ?p)) ;; NOT elimination
 
 (a-rule ((show (not ?p)) ;; NOT introduction
-	 :TEST (not (or (fetch `(not ,?p))
-			(eq ?p 'contradiction))))
+         :TEST (not (or (fetch `(not ,?p))
+                        (eq ?p 'contradiction))))
     (debug-nd "~%~D: NI attempt: (not ~A)"
-	      (ftre-depth *ftre*) ?p)
+              (ftre-depth *ftre*) ?p)
     (when (seek-in-context ?p 'contradiction)
       (debug-nd "~%~D: NI: ~A" (ftre-depth *ftre*) `(not ,?p))
       (rassert! (not ?p))))
@@ -121,48 +121,48 @@
 
 (rule ((show (or . ?disjuncts))) ;; OR introduction
       (dolist (?disjunct ?disjuncts)
-	      (debug-nd "~%~D: OI-BC: (show ~A)"
-			(ftre-depth *ftre*)  ?disjunct)
+              (debug-nd "~%~D: OI-BC: (show ~A)"
+                        (ftre-depth *ftre*)  ?disjunct)
        (rlet ((?disjunct ?disjunct))
-	     (rassert! (show ?disjunct))
-	     (rule (?disjunct) 
-		   (debug-nd "~%~D: OI: ~A"
-			     (ftre-depth *ftre*) (cons 'OR ?disjuncts))
-		   (assert! `(or . ,?disjuncts))))))
+             (rassert! (show ?disjunct))
+             (rule (?disjunct)
+                   (debug-nd "~%~D: OI: ~A"
+                             (ftre-depth *ftre*) (cons 'OR ?disjuncts))
+                   (assert! `(or . ,?disjuncts))))))
 
 (rule ((show ?r) ;; OR elimination
        :TEST (not (or (fetch ?r)
-		      (eq ?r 'contradiction)
-		      (not (simple-proposition? ?r))))
+                      (eq ?r 'contradiction)
+                      (not (simple-proposition? ?r))))
        (or ?d1 ?d2)
        :TEST  (not (or (eq ?d1 'contradiction)
-		       (eq ?d2 'contradiction))))
+                       (eq ?d2 'contradiction))))
        (debug-nd "~%~D: OE-BC: (show (implies ~A ~A))"
-		 (ftre-depth *ftre*) ?d1 ?r)
-       (rassert! (show (implies ?d1 ?r)))	 
+                 (ftre-depth *ftre*) ?d1 ?r)
+       (rassert! (show (implies ?d1 ?r)))
        (debug-nd "~%~D: OE-BC: (show (implies ~A ~A))"
-		 (ftre-depth *ftre*) ?d2 ?r)
+                 (ftre-depth *ftre*) ?d2 ?r)
        (rassert! (show (implies ?d2 ?r)))
        (rule ((implies ?d1 ?r) (implies ?d2 ?r))
-	     (debug-nd "~% ~D: OE: ~A" (ftre-depth *ftre*) ?r)
-	     (rassert! ?r)))
+             (debug-nd "~% ~D: OE: ~A" (ftre-depth *ftre*) ?r)
+             (rassert! ?r)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Indirect proof and contradiction detection
 
 (a-rule ((show ?p) ;indirect proof.
-	 :TEST (not (or (fetch ?p)
-			(eq ?p 'contradiction)
-			(not (simple-proposition? ?p)))))
+         :TEST (not (or (fetch ?p)
+                        (eq ?p 'contradiction)
+                        (not (simple-proposition? ?p)))))
     (debug-nd "~%~D: IP attempt: ~A."
-	      (ftre-depth *ftre*) ?p)
+              (ftre-depth *ftre*) ?p)
     (when (seek-in-context `(not ,?p)
-			   'contradiction)
+                           'contradiction)
       (debug-nd "~%~D: IP: ~A" (ftre-depth *ftre*) ?p)
       (rassert! ?p)))
 
 (rule ((show contradiction) ;contradiction detection
        (not ?p) ?p)
-	(debug-nd "~%~D: Contra: (not ~A) and ~A"
-		  (ftre-depth *ftre*) ?p ?p)
-	(rassert! contradiction))
+        (debug-nd "~%~D: Contra: (not ~A) and ~A"
+                  (ftre-depth *ftre*) ?p ?p)
+        (rassert! contradiction))

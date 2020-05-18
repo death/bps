@@ -16,7 +16,6 @@
 (rule ((queen ?column1 ?row1)
        (queen ?column2 ?row2)
        :TEST (not (or (= ?column1 ?column2)
-		      (queens-okay? ?column1 ?row1
-				    ?column2 ?row2))))
+                      (queens-okay? ?column1 ?row1
+                                    ?column2 ?row2))))
       (rassert! Contradiction))
-

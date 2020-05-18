@@ -23,7 +23,7 @@
       (gc)
       (time (n-queens n))
       (format t "~% For n=~D, ~D solutions, ~D assumptions."
-	     n (length *placements*) *n-assumptions*)))
+             n (length *placements*) *n-assumptions*)))
 
 (defun n-queens (n &optional (debugging? nil))
   (setup-queens-puzzle n debugging?)
@@ -33,12 +33,12 @@
 ;;;; Setup and search
 
 (defun setup-queens-puzzle (n debugging?)
-  (in-ftre 
+  (in-ftre
    (create-ftre (format nil "~D queens" n)
-		:DEBUGGING debugging?
-		:MAX-DEPTH (+ n 1)))
+                :DEBUGGING debugging?
+                :MAX-DEPTH (+ n 1)))
   (setq *placements* nil
-	*n-assumptions* 0)
+        *n-assumptions* 0)
   (bps-load-file *ftre-path* *fqueen-rule-file*))
 
 (defun make-queens-choice-sets (n)
@@ -54,14 +54,14 @@
 
 (defun solve-queens-puzzle (choice-sets)
   (cond ((fetch 'contradiction)
-	 (return-from solve-queens-puzzle nil))
-	(choice-sets ;; Make next choice
-	 (dolist (choice (car choice-sets))
-	  (incf *n-assumptions*)
-	  (try-in-context choice
-	     `(solve-queens-puzzle ',(cdr choice-sets)))))
-	(t ;; Got a consistent set of placements
-	 (gather-queens-solution))))
+         (return-from solve-queens-puzzle nil))
+        (choice-sets ;; Make next choice
+         (dolist (choice (car choice-sets))
+          (incf *n-assumptions*)
+          (try-in-context choice
+             `(solve-queens-puzzle ',(cdr choice-sets)))))
+        (t ;; Got a consistent set of placements
+         (gather-queens-solution))))
 
 ;;;; Utilities
 
@@ -77,7 +77,5 @@
     (terpri)
     (dotimes (j n)
       (format t "~A"
-	      (if (member `(queen ,i ,j) solution
-			  :TEST #'equal) "Q" "-")))))
-
-
+              (if (member `(queen ,i ,j) solution
+                          :TEST #'equal) "Q" "-")))))

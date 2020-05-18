@@ -4,6 +4,6 @@
 
 (uiop:define-package #:bps/all
   (:nicknames #:bps)
-  (:use-reexport
-   #:bps/cps/all
-   #:bps/tre/all))
+  (:import-from #:bps/cps/all)
+  (:import-from #:bps/tre/all)
+  (:import-from #:bps/ftre/all))
