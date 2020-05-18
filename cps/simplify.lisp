@@ -14,7 +14,7 @@
 ;;; This version is inspired by one of G.J. Sussman's scheme matchers.
 
 (defpackage #:bps/cps/simplify
-  (:use #:cl #:bps/cps/match)
+  (:use #:cl #:bps/cps)
   (:export
    #:*algebra-rules*
    #:simplify

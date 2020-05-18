@@ -9,8 +9,4 @@
    #:bps/ftre/finter
    #:bps/ftre/fdata
    #:bps/ftre/frules
-   #:bps/ftre/funify
-   )
-  (:use
-   ;; #:bps/tre/treex1
-   ))
+   #:bps/ftre/funify))

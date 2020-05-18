@@ -12,10 +12,7 @@
 ;;; paragraph must be included in any separate copy of this file.
 
 (defpackage #:bps/cps/boston
-  (:use #:cl
-        #:bps/cps/subways
-        #:bps/cps/search
-        #:bps/cps/variants))
+  (:use #:cl #:bps/cps/subways))
 
 (in-package #:bps/cps/boston)
 

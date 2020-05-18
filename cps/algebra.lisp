@@ -12,12 +12,10 @@
 ;;; paragraph must be included in any separate copy of this file.
 
 (defpackage #:bps/cps/algebra
-  (:use #:cl
-        #:bps/cps/search
-        #:bps/cps/variants
-        #:bps/cps/match
-        #:bps/cps/simplify)
-  (:export))
+  (:use #:cl #:bps/cps #:bps/cps/simplify)
+  (:export
+   #:setup-algebra-problem
+   #:*bundy*))
 
 (in-package #:bps/cps/algebra)
 

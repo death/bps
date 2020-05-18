@@ -24,7 +24,7 @@
 ;;; on that line in one TAKE-LINE operation.
 
 (defpackage #:bps/cps/subways
-  (:use #:cl #:bps/cps/search)
+  (:use #:cl #:bps/cps)
   (:export
    #:defline
    #:defstation

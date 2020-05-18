@@ -8,6 +8,4 @@
    #:bps/tre/unify
    #:bps/tre/tinter
    #:bps/tre/data
-   #:bps/tre/rules)
-  (:use
-   #:bps/tre/treex1))
+   #:bps/tre/rules))

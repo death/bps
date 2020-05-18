@@ -7,9 +7,4 @@
   (:use-reexport
    #:bps/cps/search
    #:bps/cps/variants
-   #:bps/cps/match)
-  (:use
-   #:bps/cps/subways
-   #:bps/cps/boston
-   #:bps/cps/simplify
-   #:bps/cps/algebra))
+   #:bps/cps/match))

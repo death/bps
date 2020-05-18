@@ -12,8 +12,11 @@
 ;;; paragraph must be included in any separate copy of this file.
 
 (defpackage #:bps/tre/treex1
-  (:use #:cl #:bps/tre/tinter #:bps/tre/data #:bps/tre/rules)
-  (:export))
+  (:use #:cl #:bps/tre)
+  (:export
+   #:ex1
+   #:ex2
+   #:ex3))
 
 (in-package #:bps/tre/treex1)
 
