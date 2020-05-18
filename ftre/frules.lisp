@@ -34,7 +34,8 @@
    #:*macros-to-expand*
    #:fully-expand-body
    #:pattern-free-variables
-   #:generate-match-body))
+   #:generate-match-body
+   #:P))
 
 (in-package #:bps/ftre/frules)
 
@@ -104,7 +105,9 @@
                               (cdr triggers) body)) asn?))
   ;; Returning this ensures that all procedure definitions
   ;; are executed before any indexing occurs.
-  `(progn ,@ *rule-procedures* ,index-form)))
+    `(progn
+       ,@ *rule-procedures*
+       ,index-form)))
 
 (defmacro internal-rule (triggers-in &rest body)
   (let ((triggers (parse-triggers triggers-in)))
@@ -195,6 +198,7 @@
   (setq env (append newly-bound
                     (scratchout newly-bound *bound-vars*)))
   `(defun ,(generate-rule-procedure-name pattern) ,env
+     (declare (ignorable ,@env))
      ,@ body))
 
 (defun generate-match-procedure (pattern var test)
@@ -205,7 +209,8 @@
         (generate-match-body
          pattern (pattern-free-variables pattern) test)
     `(defun ,(generate-rule-procedure-name pattern)
-       (P ,@ *bound-vars*)
+         (P ,@ *bound-vars*)
+       (declare (ignorable ,@*bound-vars*))
        ;;first arg, P, is the pattern
        (if (and ,@ tests)
            (values T

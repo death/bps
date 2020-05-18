@@ -17,7 +17,8 @@
    #:quotize
    #:rlet
    #:pattern-free-variables
-   #:generate-match-body))
+   #:generate-match-body
+   #:P))
 
 (in-package #:bps/ftre/funify)
 

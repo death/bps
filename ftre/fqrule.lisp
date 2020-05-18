@@ -11,8 +11,6 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
-
 (rule ((queen ?column1 ?row1)
        (queen ?column2 ?row2)
        :TEST (not (or (= ?column1 ?column2)

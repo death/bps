@@ -11,7 +11,10 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/ftre/fqueens
+  (:use #:cl #:bps/ftre))
+
+(in-package #:bps/ftre/fqueens)
 
 ;;; Statistics
 (defvar *n-assumptions* 0) ;number of assumptions made (statistics)
@@ -20,7 +23,6 @@
 (defun test-queens (from to)
   (do ((n from (1+ n)))
       ((> n to))
-      (gc)
       (time (n-queens n))
       (format t "~% For n=~D, ~D solutions, ~D assumptions."
              n (length *placements*) *n-assumptions*)))
@@ -39,7 +41,8 @@
                 :MAX-DEPTH (+ n 1)))
   (setq *placements* nil
         *n-assumptions* 0)
-  (bps-load-file *ftre-path* *fqueen-rule-file*))
+  (handler-bind ((warning #'muffle-warning))
+    (load "fqrule")))
 
 (defun make-queens-choice-sets (n)
   (do ((column 1 (1+ column))
@@ -77,5 +80,5 @@
     (terpri)
     (dotimes (j n)
       (format t "~A"
-              (if (member `(queen ,i ,j) solution
+              (if (member `(queen ,(1+ i) ,(1+ j)) solution
                           :TEST #'equal) "Q" "-")))))
