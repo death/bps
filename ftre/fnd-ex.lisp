@@ -11,7 +11,20 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/ftre/fnd-ex
+  (:use #:cl #:bps/ftre)
+  (:export
+   #:ex1
+   #:ex2
+   #:ex3
+   #:ex4
+   #:ex5
+   #:ex6
+   #:ex7
+   #:ex8
+   #:ex9))
+
+(in-package #:bps/ftre/fnd-ex)
 
 (defvar *nd-rules* "fnd")
 
@@ -21,7 +34,8 @@
   (in-ftre (create-ftre title :DEBUGGING debugging
                         :DEBUGGING-CONTEXTS debugging-contexts
                         :MAX-DEPTH max-depth))
-  (bps-load-file *ftre-path* *nd-rules*))
+  (handler-bind ((warning #'muffle-warning))
+    (load *nd-rules*)))
 
 (defun ex1 (&key (debugging nil) (debugging-contexts nil)
                  (max-depth 5))  ;tests NI, CE, OI, and contradiction detection.

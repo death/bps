@@ -19,8 +19,6 @@
 ;; As in the written rules, the predicate "SHOW" will indicate
 ;; our interest in a proving a fact of a particular form.
 
-(in-package :COMMON-LISP-USER)
-
 ;; First, some utilities:
 
 (defvar *debug-nd* nil)

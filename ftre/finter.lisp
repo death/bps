@@ -43,6 +43,7 @@
    #:seek-in-context
    #:assert!
    #:fetch
+   #:rule
    #:run-rules
    #:show-data
    #:show-rules))
@@ -206,7 +207,7 @@
                           ,(ftre-depth *ftre*))
                   (debugging-contexts
                    "~% (~D): Found goal ~A!"
-                   *ftre* (ftre-depth *ftre*) ',goal)
+                   (ftre-depth *ftre*) ',goal)
                   (throw 'punt-context t)))))
       (catch 'punt-context (run-rules *ftre*))
       (debugging-contexts

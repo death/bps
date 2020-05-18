@@ -35,7 +35,8 @@
    #:fully-expand-body
    #:pattern-free-variables
    #:generate-match-body
-   #:P))
+   #:P
+   #:rlet))
 
 (in-package #:bps/ftre/frules)
 
