@@ -18,7 +18,6 @@
 (rule ((:IN (Queen ?column1 ?row1) :VAR ?Q1)
        (:IN (Queen ?column2 ?row2) :VAR ?Q2
          :TEST (not (or (= ?column1 ?column2)
-			(queens-okay? ?column1 ?row1
-				      ?column2 ?row2)))))
+                        (queens-okay? ?column1 ?row1
+                                      ?column2 ?row2)))))
       (rassert! Queens-capture (Death ?Q1 ?Q2)))
-

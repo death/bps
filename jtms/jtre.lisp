@@ -32,8 +32,8 @@
 
 (setq *jsaint-files*
       '("jsaint"   ;; JSAINT main program
-	"match"    ;; math-oriented pattern matcher
-	"simplify" ;; Algebraic simplifier 
+        "match"    ;; math-oriented pattern matcher
+        "simplify" ;; Algebraic simplifier
         ;; These two files can only be compiled after a JSAINT
         ;; has been created:
         "jsrules"  ;; Bookkeeping rules

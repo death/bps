@@ -14,4 +14,5 @@
   :defsystem-depends-on ("asdf-package-system")
   :depends-on ("bps/cps/all"
                "bps/tre/all"
-               "bps/ftre/all"))
+               "bps/ftre/all"
+               "bps/jtms/all"))

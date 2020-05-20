@@ -14,7 +14,7 @@
 (in-package :COMMON-LISP-USER)
 
 (defIntegration Integral-of-Constant
-  (Integral ?t ?var) 
+  (Integral ?t ?var)
   :TEST (not (occurs-in? ?var ?t))
   :RESULT (* ?t ?var))
 
@@ -25,21 +25,21 @@
 (defIntegration Move-Constant-outside
   (Integral (* ?const ?nonconst) ?var)
   :TEST (and (not (occurs-in? ?var ?const))
-	     (occurs-in? ?var ?nonconst))
+             (occurs-in? ?var ?nonconst))
   :SUBPROBLEMS ((?int (Integrate (Integral ?nonconst ?var))))
   :RESULT (* ?const ?int))
 
 (defIntegration Integral-of-Sum
   (Integral (+ ?t1 ?t2) ?var)
   :SUBPROBLEMS ((?int1 (Integrate (Integral ?t1 ?var)))
-		(?int2 (Integrate (Integral ?t2 ?var))))
+                (?int2 (Integrate (Integral ?t2 ?var))))
   :RESULT (+ ?int1 ?int2))
 
 (defIntegration Integral-of-Nary-sum
   (Integral (+ ?t1 ?t2 . ?trest) ?var)
   :SUBPROBLEMS ((?int1 (Integrate (Integral ?t1 ?var)))
-		(?int2 (Integrate (Integral ?t2 ?var)))
-		(?intr (Integrate (Integral (+ . ?trest) ?var))))
+                (?int2 (Integrate (Integral ?t2 ?var)))
+                (?intr (Integrate (Integral (+ . ?trest) ?var))))
   :TEST (not (null ?trest))
   :RESULT (+ ?int1 ?int2 ?intr))
 
@@ -51,7 +51,7 @@
 (defIntegration Integral-of-minus
   (Integral (- ?t1 ?t2) ?var)
   :SUBPROBLEMS ((?int1 (Integrate (Integral ?t1 ?var)))
-		(?int2 (Integrate (Integral ?t2 ?var))))
+                (?int2 (Integrate (Integral ?t2 ?var))))
   :RESULT (- ?int1 ?int2))
 
 (defIntegration Integral-of-SQR
@@ -77,7 +77,7 @@
 (defIntegration non-e-power-integral
   (Integral (expt ?b (* ?a ?var)) ?var)
   :TEST (and (not (occurs-in? ?var ?a))
-	     (not (occurs-in? ?var ?b)))
+             (not (occurs-in? ?var ?b)))
   :RESULT (/ (expt ?b (* ?a ?var)) (* ?a (log ?b %e))))
 
 (defIntegration Log-Integral
@@ -107,33 +107,33 @@
 (defIntegration SinToCosSqrSub
   (Integral ?exp ?var)
   :TEST (and (occurs-in? ?var ?exp)
-	     (occurs-in? `(sin ,?var) ?exp))
+             (occurs-in? `(sin ,?var) ?exp))
   :SUBPROBLEMS
   ((?Int (Integrate (Integral
-		     (:EVAL (subst `(sqrt (- 1 (expt (cos ,?var) 2)))
-				   `(sin ,?var)
-				   ?exp :TEST 'equal)) ?var))))
+                     (:EVAL (subst `(sqrt (- 1 (expt (cos ,?var) 2)))
+                                   `(sin ,?var)
+                                   ?exp :TEST 'equal)) ?var))))
   :RESULT ?Int)
 
 (defIntegration CosToSinSqrSub
   (Integral ?exp ?var)
   :TEST (and (occurs-in? ?var ?exp)
-	     (occurs-in? `(cos ,?var) ?exp))
+             (occurs-in? `(cos ,?var) ?exp))
   :SUBPROBLEMS
   ((?Int (Integrate (Integral
-		     (:EVAL (subst `(sqrt (- 1 (expt (sin ,?var) 2)))
-				   `(cos ,?var)
-				   ?exp :TEST 'equal)) ?var))))
+                     (:EVAL (subst `(sqrt (- 1 (expt (sin ,?var) 2)))
+                                   `(cos ,?var)
+                                   ?exp :TEST 'equal)) ?var))))
   :RESULT ?Int)
 
 (defIntegration SinSqrToTanCosSub
   (Integral ?exp ?var)
   :TEST (and (occurs-in? ?var ?exp)
-	     (occurs-in? `(sin ,?var) ?exp))
+             (occurs-in? `(sin ,?var) ?exp))
   :SUBPROBLEMS ((?int (Integrate (Integral
-				  (:EVAL (subst `(* (sqr (tan ,?var))
-						    (sqr (cos ,?var)))
-						`(sin ,?var)
-						?exp :TEST 'equal))
-				  ?var))))
+                                  (:EVAL (subst `(* (sqr (tan ,?var))
+                                                    (sqr (cos ,?var)))
+                                                `(sin ,?var)
+                                                ?exp :TEST 'equal))
+                                  ?var))))
   :RESULT ?Int)

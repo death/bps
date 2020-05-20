@@ -19,18 +19,18 @@
 
 (defun simplify (exp)
   (or (gethash exp *simplify-cache*)
-      (setf (gethash exp *simplify-cache*) 
-	    (simplify-it exp *algebra-rules*))))
+      (setf (gethash exp *simplify-cache*)
+            (simplify-it exp *algebra-rules*))))
 
 (defun clear-simplify-cache ()
   (clrhash *simplify-cache*))
 
 (defun simplify-it (exp rules &aux result)
   (setq result
-	(try-matcher-rules
-	 (if (listp exp) (mapcar #'simplify exp)
-	   exp)
-	 rules))
+        (try-matcher-rules
+         (if (listp exp) (mapcar #'simplify exp)
+           exp)
+         rules))
   (if (equal result exp) result
     (simplify-it result rules)))
 
@@ -44,9 +44,9 @@
 ;;      (format t "~% ~A: ~A." (car binding)
 ;;                (var-value (list '? (car binding)) bindings))))
       (unless (eq bindings :FAIL)
-	(when (check-predicate (rule-predicate rule) bindings)
-	  (return-from try-matcher-rules
-		       (substitute-in (rule-skeleton rule) bindings)))))))
+        (when (check-predicate (rule-predicate rule) bindings)
+          (return-from try-matcher-rules
+                       (substitute-in (rule-skeleton rule) bindings)))))))
 
 (defun check-predicate (proc bindings)
   (unless proc (return-from check-predicate T))
@@ -60,46 +60,46 @@
 
 (defun alg< (e1 e2) ;; Sort predicate for algebraic expressions
   (cond ((equal? e1 e2) nil)
-	((consp e1)
-	 (if (consp e2)
-	     (if (equal? (car e1) (car e2))
-		 (alg< (cdr e1) (cdr e2))
-		 (alg< (car e1) (car e2)))
-	     nil))
-	((consp e2) t)
-	((symbolp e1)
-	 (if (symbolp e2)
-	     (string< (symbol-name e1) (symbol-name e2))
-	     nil))
-	((symbolp e2) t)
-	((and (numberp e1) (numberp e2)) (< e1 e2))
-	(t (error "alg< cannot compare these: ~A, ~A." e1 e2))))
+        ((consp e1)
+         (if (consp e2)
+             (if (equal? (car e1) (car e2))
+                 (alg< (cdr e1) (cdr e2))
+                 (alg< (car e1) (car e2)))
+             nil))
+        ((consp e2) t)
+        ((symbolp e1)
+         (if (symbolp e2)
+             (string< (symbol-name e1) (symbol-name e2))
+             nil))
+        ((symbolp e2) t)
+        ((and (numberp e1) (numberp e2)) (< e1 e2))
+        (t (error "alg< cannot compare these: ~A, ~A." e1 e2))))
 
 (defun alg= (e1 e2) (not (or (alg< e1 e2) (alg< e2 e1))))
- 
+
 (defun sorted? (list pred)
   (cond ((or (null list) (null (cdr list))) t)
-	((funcall pred (cadr list) (car list)) nil)
-	(t (sorted? (cdr list) pred))))
+        ((funcall pred (cadr list) (car list)) nil)
+        (t (sorted? (cdr list) pred))))
 
 (defun +/*? (exp) (or (eq exp '+) (eq exp '*)))
 
 (defun same-constant? (exp constant)
   (and (numberp exp)
        (if (floatp exp) (equal? exp (float constant))
-	   (= exp constant))))
+           (= exp constant))))
 
 (defun zero? (exp) (same-constant? exp 0))
 (defun one? (exp) (same-constant? exp 1))
 
 ;;;; Extra utilities
 
-(defun occurs-in? (exp1 exp2) 
+(defun occurs-in? (exp1 exp2)
   (cond ((equal exp1 exp2) t)
-	((null exp2) nil)
-	((listp exp2)
-	 (or (occurs-in? exp1 (car exp2))
-	     (occurs-in? exp1 (cdr exp2))))))
+        ((null exp2) nil)
+        ((listp exp2)
+         (or (occurs-in? exp1 (car exp2))
+             (occurs-in? exp1 (cdr exp2))))))
 
 
 ;;;; Rules for algebraic simplification
@@ -151,7 +151,7 @@
 ((* (?? pre) (- (? term)) (?? post)) nil
  (* (?? pre) (* -1 (? term)) (?? post)))
 ((abs (? e numberp)) nil (:EVAL (abs (? e))))
-((log (? x numberp) (? base numberp)) 
+((log (? x numberp) (? base numberp))
  nil (:EVAL (/ (log (? x)) (log (? base)))))
 ;; Flatten +,*
 (((? op +/*?) (?? e1) ((? op) (?? e2) (?? e3)))

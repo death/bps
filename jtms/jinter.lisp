@@ -1,6 +1,6 @@
-;; -*- Mode: Lisp; -*- 
+;; -*- Mode: Lisp; -*-
 
-;;;; JTRE definitions  
+;;;; JTRE definitions
 ;;;; Last edited 1/29/93, by KDF
 
 ;;; Copyright (c) 1989 -- 1992 Kenneth D. Forbus, Northwestern University,
@@ -11,7 +11,35 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER) 
+(defpackage #:bps/jtms/jinter
+  (:use #:cl)
+  (:export
+   #:jtre
+   #:jtre-p
+   #:jtre-title
+   #:jtre-jtms
+   #:jtre-dbclass-table
+   #:jtre-datum-counter
+   #:jtre-rule-counter
+   #:jtre-debugging
+   #:jtre-queue
+   #:jtre-rules-run
+   #:*jtre*
+   #:with-jtre
+   #:in-jtre
+   #:debugging-jtre
+   #:create-jtre
+   #:change-jtre
+   #:uassert!
+   #:uassume!
+   #:run-forms
+   #:run
+   #:show
+   #:run-rules
+   #:show-data
+   #:show-rules))
+
+(in-package #:bps/jtms/jinter)
 
 (defstruct (jtre (:PRINT-FUNCTION jtre-printer))
   title                   ; Pretty name
@@ -24,6 +52,7 @@
   (rules-run 0))          ; Statistic
 
 (defun jtre-printer (j st ignore)
+  (declare (ignore ignore))
   (format st "<JTRE: ~A>" (jtre-title j)))
 
 (defvar *JTRE* nil)
@@ -38,19 +67,19 @@
 
 (defun create-jtre (title &key debugging)
  (let ((j (make-jtre
-	   :TITLE title 
-	   :JTMS (create-jtms (list :JTMS-OF title) 
-			      :NODE-STRING 'view-node)
-	   :DBCLASS-TABLE (make-hash-table :TEST #'eq)
-	   :DEBUGGING debugging)))
+           :TITLE title
+           :JTMS (create-jtms (list :JTMS-OF title)
+                              :NODE-STRING 'view-node)
+           :DBCLASS-TABLE (make-hash-table :TEST #'eq)
+           :DEBUGGING debugging)))
    (change-jtms (jtre-jtms j)
-		:ENQUEUE-PROCEDURE
-		#'(lambda (rule) (enqueue rule j)))
+                :ENQUEUE-PROCEDURE
+                #'(lambda (rule) (enqueue rule j)))
    j))
 
 (defun change-jtre (jtre &key (debugging :NADA))
   (unless (eq debugging :NADA)
-	  (setf (jtre-debugging jtre) debugging)))
+          (setf (jtre-debugging jtre) debugging)))
 
 ;;;; Running JTRE
 
@@ -67,12 +96,15 @@
 
 (defun run (&optional (*JTRE* *JTRE*)) ;; Toplevel driver function
     (format T "~%>>")
-    (do ((form (read) (read)))
-        ((member form '(quit stop exit abort)) nil)
+    (let ((*package* (find-package "BPS/JTMS/JINTER")))
+      (do ((form (read) (read)))
+          ((and (symbolp form)
+                (member form '(quit stop exit abort)
+                        :test #'string-equal))
+           nil)
         (format t "~%~A" (eval form))
         (run-rules)
-        (format t "~%>>")))
+        (format t "~%>>"))))
 
 (defun show (&optional (*JTRE* *JTRE*) (stream *standard-output*))
   (show-data *JTRE* stream) (show-rules *JTRE* stream))
-
