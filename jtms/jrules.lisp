@@ -12,7 +12,12 @@
 ;;; paragraph must be included in any separate copy of this file.
 
 (defpackage #:bps/jtms/jrules
-  (:use #:cl #:bps/jtms/jinter #:bps/jtms/unify #:bps/jtms/funify #:bps/jtms/jdata)
+  (:use #:cl
+        #:bps/jtms/jtms
+        #:bps/jtms/jinter
+        #:bps/jtms/unify
+        #:bps/jtms/funify
+        #:bps/jtms/jdata)
   (:export
    #:rule
    #:rule-p
@@ -47,7 +52,8 @@
    #:dequeue
    #:show-rules
    #:print-rule
-   #:get-rule))
+   #:get-rule
+   #:rlet))
 
 (in-package #:bps/jtms/jrules)
 
@@ -87,7 +93,8 @@
                              'rule
                              (make-nested-rule
                               (cdr triggers) body))))
-  `(progn ,@ *rule-procedures* ,index-form)))
+    `(with-compilation-unit ()
+       ,@ *rule-procedures* ,index-form)))
 
 (defmacro internal-rule (triggers &rest body)
   `(add-internal-rule ,(car triggers)
@@ -171,6 +178,7 @@
   (unless (eq condition :INTERN) (push 'trigger-node env))
   (setq fname (generate-rule-procedure-name pattern))
   `(defun ,fname ,env
+     (declare (ignorable ,@env))
      ,@ (cond ((eq condition :INTERN) body) ;; Just do it
               (t ;; Must check and see if the node's belief state
                  ;; matches the rule's requirements
@@ -190,15 +198,17 @@
    (generate-match-body
     pattern (pattern-free-variables pattern) test)
    `(defun ,(generate-rule-procedure-name pattern)
-      (P ,@ *bound-vars*)
-       ;;first arg, P, is the pattern
-       (if (and ,@ tests)
-           (values T (list ,@ (if var '(P))
-                           ,@ (reverse binding-specs))
-                   ,(unless (eq condition :INTERN) t))))))
+        (P ,@ *bound-vars*)
+      (declare (ignorable ,@*bound-vars*))
+      ;;first arg, P, is the pattern
+      (if (and ,@ tests)
+          (values T (list ,@ (if var '(P))
+                             ,@ (reverse binding-specs))
+                  ,(unless (eq condition :INTERN) t))))))
 
 (defun scratchout (l1 l2)  ;non-destructive and order-preserving
-  (dolist (el1 l1 l2) (setq l2 (remove el1 l2))))
+  (dolist (el1 l1 l2)
+    (setq l2 (remove el1 l2))))
 
 (defun generate-rule-procedure-name (pattern)
   (intern (format nil "~A-~A-~A" *file-prefix* pattern (incf *file-counter*))))

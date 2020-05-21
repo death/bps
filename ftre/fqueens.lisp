@@ -41,8 +41,7 @@
                 :MAX-DEPTH (+ n 1)))
   (setq *placements* nil
         *n-assumptions* 0)
-  (handler-bind ((warning #'muffle-warning))
-    (load "fqrule")))
+  (load "fqrule"))
 
 (defun make-queens-choice-sets (n)
   (do ((column 1 (1+ column))

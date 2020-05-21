@@ -11,7 +11,12 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/jtms/jtest
+  (:use #:cl #:bps/jtms)
+  (:export
+   #:shakedown-jtre))
+
+(in-package #:bps/jtms/jtest)
 
 (defun shakedown-jtre ()
   (in-jtre (create-jtre "Test One"))

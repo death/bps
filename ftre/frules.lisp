@@ -106,7 +106,7 @@
                               (cdr triggers) body)) asn?))
   ;; Returning this ensures that all procedure definitions
   ;; are executed before any indexing occurs.
-    `(progn
+    `(with-compilation-unit ()
        ,@ *rule-procedures*
        ,index-form)))
 

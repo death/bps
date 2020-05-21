@@ -6,7 +6,11 @@
 
 ;;; -*- Mode: LISP; Syntax: COMMON-LISP; Package: CL-USER; Base: 10 -*-
 
-(asdf:register-system-packages "bps" '(#:bps/cps #:bps/tre #:bps/ftre))
+(asdf:register-system-packages "bps"
+                               '(#:bps/cps
+                                 #:bps/tre
+                                 #:bps/ftre
+                                 #:bps/jtms))
 
 (asdf:defsystem #:bps
   :description "Code from Building Problem Solvers"

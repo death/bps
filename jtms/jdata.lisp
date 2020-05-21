@@ -12,7 +12,11 @@
 ;;; paragraph must be included in any separate copy of this file.
 
 (defpackage #:bps/jtms/jdata
-  (:use #:cl #:bps/jtms/jinter #:bps/jtms/jtms #:bps/jtms/funify)
+  (:use #:cl
+        #:bps/jtms/unify
+        #:bps/jtms/jinter
+        #:bps/jtms/jtms
+        #:bps/jtms/funify)
   (:export
    #:dbclass
    #:dbclass-p
@@ -56,7 +60,8 @@
    #:view-node
    #:show-datum
    #:get-datum
-   #:get-just))
+   #:get-just
+   #:try-rules))
 
 (in-package #:bps/jtms/jdata)
 
@@ -100,7 +105,8 @@
   `(assert! ,(quotize fact) ,(quotize just)))
 
 (defun quiet-assert! (fact just &optional (*JTRE* *JTRE*))
-  (without-contradiction-check (jtre-jtms *JTRE*) (assert! fact just)))
+  (without-contradiction-check (jtre-jtms *JTRE*)
+    (assert! fact just)))
 
 (defun assume! (fact reason &optional (*JTRE* *JTRE*) &aux datum node)
   (setq datum (referent fact t)
@@ -116,7 +122,9 @@
             (show-datum datum) (datum-assumption? datum) reason)))
   datum)
 
-(defun already-assumed? (fact) (datum-assumption? (referent fact t)))
+(defun already-assumed? (fact)
+  (datum-assumption? (referent fact t)))
+
 
 ;;;; Retraction
 
@@ -153,15 +161,15 @@
 
 (defun in? (fact &optional (*JTRE* *JTRE*) &aux r)
   (when (setq r (referent fact))
-        (in-node? (datum-tms-node r))))
+    (in-node? (datum-tms-node r))))
 
 (defun out? (fact &optional (*JTRE* *JTRE*) &aux r)
   (when (setq r (referent fact))
-        (out-node? (datum-tms-node r))))
+    (out-node? (datum-tms-node r))))
 
 (defun why? (fact &optional (*JTRE* *JTRE*) &aux r)
   (when (setq r (referent fact))
-        (why-node (datum-tms-node r))))
+    (why-node (datum-tms-node r))))
 
 (defun assumptions-of (fact &optional (*JTRE* *JTRE*))
   (mapcar #'view-node

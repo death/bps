@@ -12,7 +12,7 @@
 ;;; paragraph must be included in any separate copy of this file.
 
 (defpackage #:bps/jtms/jinter
-  (:use #:cl)
+  (:use #:cl #:bps/jtms/unify #:bps/jtms/jtms)
   (:export
    #:jtre
    #:jtre-p
@@ -37,7 +37,10 @@
    #:show
    #:run-rules
    #:show-data
-   #:show-rules))
+   #:show-rules
+   #:assert!
+   #:assume!
+   #:enqueue))
 
 (in-package #:bps/jtms/jinter)
 
@@ -92,19 +95,22 @@
   (run-rules *JTRE*))
 
 (defun run-forms (forms &optional (*JTRE* *JTRE*))
-  (dolist (form forms) (eval form) (run-rules *JTRE*)))
+  (dolist (form forms)
+    (eval form)
+    (run-rules *JTRE*)))
 
 (defun run (&optional (*JTRE* *JTRE*)) ;; Toplevel driver function
-    (format T "~%>>")
-    (let ((*package* (find-package "BPS/JTMS/JINTER")))
-      (do ((form (read) (read)))
-          ((and (symbolp form)
-                (member form '(quit stop exit abort)
-                        :test #'string-equal))
-           nil)
-        (format t "~%~A" (eval form))
-        (run-rules)
-        (format t "~%>>"))))
+  (format T "~%>>")
+  (let ((*package* (find-package "BPS/JTMS/JINTER")))
+    (do ((form (read) (read)))
+        ((and (symbolp form)
+              (member form '(quit stop exit abort)
+                      :test #'string-equal))
+         nil)
+      (format t "~%~A" (eval form))
+      (run-rules)
+      (format t "~%>>"))))
 
 (defun show (&optional (*JTRE* *JTRE*) (stream *standard-output*))
-  (show-data *JTRE* stream) (show-rules *JTRE* stream))
+  (show-data *JTRE* stream)
+  (show-rules *JTRE* stream))
