@@ -19,7 +19,8 @@
    #:rlet
    #:pattern-free-variables
    #:generate-match-body
-   #:P))
+   #:P
+   #:fully-expand-body))
 
 (in-package #:bps/jtms/funify)
 

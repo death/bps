@@ -11,9 +11,19 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/jtms/simplify
+  (:use #:cl #:bps/jtms/match)
+  (:export
+   #:simplify
+   #:clear-simplify-cache
+   #:occurs-in?
+   #:same-constant?))
+
+(in-package #:bps/jtms/simplify)
 
 ;;; This version is inspired by one of G.J. Sussman's scheme matchers.
+
+(defvar *algebra-rules*)
 
 (defvar *simplify-cache* (make-hash-table :TEST #'equal))
 
@@ -104,65 +114,65 @@
 
 ;;;; Rules for algebraic simplification
 
-(setq *algebra-rules* `(
-;; Flush degenerate cases
-(((? op +/*?) (? e)) nil (? e))
-((+ (? zero zero?) (?? e)) nil (+ (?? e)))
-((- (? zero zero?) (? e)) nil (- (? e)))
-((- (? e) (? zero zero?)) nil (? e))
-((- (? e) (? e)) nil 0)
-((* (? one one?) (?? e)) nil (* (?? e)))
-((* (? zero zero?) (?? e)) nil 0)
-((expt (? e) (? zero zero?)) nil 1)
-((expt (? e) (? one one?)) nil (? e))
-((log (? one one?) (? base)) nil 0)
-((log (? base) (? base)) nil 1)
-((log (expt (? base) (? val)) (? base)) nil (? val))
-((expt (? base) (log (? val) (? base))) nil (? val))
-;; Equivalences involving powers
-((* (? e) (? e)) nil (sqr (? e)))
-((expt (? e) (? two ,#'(lambda (exp) (same-constant? exp 2))))
- nil (sqr (? e)))
-((sqrt (sqr (? e))) nil (abs (? e)))
-((sqr (sqrt (? e))) nil (? e))
+(setq *algebra-rules*
+      `(;; Flush degenerate cases
+        (((? op +/*?) (? e)) nil (? e))
+        ((+ (? zero zero?) (?? e)) nil (+ (?? e)))
+        ((- (? zero zero?) (? e)) nil (- (? e)))
+        ((- (? e) (? zero zero?)) nil (? e))
+        ((- (? e) (? e)) nil 0)
+        ((* (? one one?) (?? e)) nil (* (?? e)))
+        ((* (? zero zero?) (?? e)) nil 0)
+        ((expt (? e) (? zero zero?)) nil 1)
+        ((expt (? e) (? one one?)) nil (? e))
+        ((log (? one one?) (? base)) nil 0)
+        ((log (? base) (? base)) nil 1)
+        ((log (expt (? base) (? val)) (? base)) nil (? val))
+        ((expt (? base) (log (? val) (? base))) nil (? val))
+        ;; Equivalences involving powers
+        ((* (? e) (? e)) nil (sqr (? e)))
+        ((expt (? e) (? two ,#'(lambda (exp) (same-constant? exp 2))))
+         nil (sqr (? e)))
+        ((sqrt (sqr (? e))) nil (abs (? e)))
+        ((sqr (sqrt (? e))) nil (? e))
 
-;; Combine numerical constants
-(((? op +/*?) (? e1 numberp) (? e2 numberp) (?? e3))
- nil
- ((? op) (:EVAL ((? op) (? e1) (? e2))) (?? e3)))
-((- (- (? e1) (? e2))) nil (- (? e2) (? e1))) ;; strip
-((- (? e1 numberp) (? e2 numberp)) nil (:EVAL (- (? e1) (? e2))))
-((- (? e1 numberp)) nil (:EVAL (- (? e1))))
-((- (? e1) (? e2 numberp)) nil (+ (- (? e2)) (? e1)))
-((- (? e1 numberp) (+ (? e2 numberp) (?? e3)))
- nil (- (:EVAL (- (? e1) (? e2))) (+ (?? e3))))
-((- (? e1 numberp) (- (? e2 numberp) (?? e3)))
- nil (+ (:EVAL (- (? e1) (? e2))) (?? e3)))
-((+ (? e1 numberp) (- (? e2 numberp) (?? e3)))
- nil (- (:EVAL (+ (? e1) (? e2))) (?? e3)))
-((sqr (? e1 numberp)) nil (:EVAL (* (? e1)  (? e1))))
-((sqrt (? e1 numberp)) nil (:EVAL (sqrt (? e1))))
-((expt (? e1 numberp) (? e2 numberp)) nil (:EVAL (expt (? e1) (? e2))))
-((/ (? e1 numberp) (? e2 numberp)) nil (:EVAL (/ (? e1) (? e2))))
-((* (? e1 numberp) (/ (? e2) (? e3 numberp))) nil
- (* (:EVAL (/ (? e1) (? e3))) (? e2)))
-((/ (* (? e1 numberp) (? e2)) (? e3 numberp)) nil
- (* (:EVAL (/ (? e1 numberp) (? e3 numberp))) (? e2)))
-((* (?? pre) (- (? term)) (?? post)) nil
- (* (?? pre) (* -1 (? term)) (?? post)))
-((abs (? e numberp)) nil (:EVAL (abs (? e))))
-((log (? x numberp) (? base numberp))
- nil (:EVAL (/ (log (? x)) (log (? base)))))
-;; Flatten +,*
-(((? op +/*?) (?? e1) ((? op) (?? e2) (?? e3)))
- nil
- ((? op) (?? e1) (?? e2) (?? e3)))
-;; Combine like terms
-((+ (?? pre) (* (? f1) (? thing)) (* (? f2) (? thing)) (?? post)) nil
- (+ (?? pre) (* (* (? f1) (? f2)) (? thing)) (?? post)))
-((+ (?? pre) (* (? f1) (? thing)) (?? mid) (? thing) (?? post)) nil
- (+ (?? pre) (* (+ 1 (? f1)) (? thing)) (?? mid) (?? post)))
-;; Canonicalize +,*
-(((? op +/*?) (?? terms))
- (not (sorted? (quote (? terms)) #'alg<))
- ((? op) (:SPLICE (sort (quote (? terms)) #'alg<))))))
+        ;; Combine numerical constants
+        (((? op +/*?) (? e1 numberp) (? e2 numberp) (?? e3))
+         nil
+         ((? op) (:EVAL ((? op) (? e1) (? e2))) (?? e3)))
+        ((- (- (? e1) (? e2))) nil (- (? e2) (? e1))) ;; strip
+        ((- (? e1 numberp) (? e2 numberp)) nil (:EVAL (- (? e1) (? e2))))
+        ((- (? e1 numberp)) nil (:EVAL (- (? e1))))
+        ((- (? e1) (? e2 numberp)) nil (+ (- (? e2)) (? e1)))
+        ((- (? e1 numberp) (+ (? e2 numberp) (?? e3)))
+         nil (- (:EVAL (- (? e1) (? e2))) (+ (?? e3))))
+        ((- (? e1 numberp) (- (? e2 numberp) (?? e3)))
+         nil (+ (:EVAL (- (? e1) (? e2))) (?? e3)))
+        ((+ (? e1 numberp) (- (? e2 numberp) (?? e3)))
+         nil (- (:EVAL (+ (? e1) (? e2))) (?? e3)))
+        ((sqr (? e1 numberp)) nil (:EVAL (* (? e1)  (? e1))))
+        ((sqrt (? e1 numberp)) nil (:EVAL (sqrt (? e1))))
+        ((expt (? e1 numberp) (? e2 numberp)) nil (:EVAL (expt (? e1) (? e2))))
+        ((/ (? e1 numberp) (? e2 numberp)) nil (:EVAL (/ (? e1) (? e2))))
+        ((* (? e1 numberp) (/ (? e2) (? e3 numberp))) nil
+         (* (:EVAL (/ (? e1) (? e3))) (? e2)))
+        ((/ (* (? e1 numberp) (? e2)) (? e3 numberp)) nil
+         (* (:EVAL (/ (? e1 numberp) (? e3 numberp))) (? e2)))
+        ((* (?? pre) (- (? term)) (?? post)) nil
+         (* (?? pre) (* -1 (? term)) (?? post)))
+        ((abs (? e numberp)) nil (:EVAL (abs (? e))))
+        ((log (? x numberp) (? base numberp))
+         nil (:EVAL (/ (log (? x)) (log (? base)))))
+        ;; Flatten +,*
+        (((? op +/*?) (?? e1) ((? op) (?? e2) (?? e3)))
+         nil
+         ((? op) (?? e1) (?? e2) (?? e3)))
+        ;; Combine like terms
+        ((+ (?? pre) (* (? f1) (? thing)) (* (? f2) (? thing)) (?? post)) nil
+         (+ (?? pre) (* (* (? f1) (? f2)) (? thing)) (?? post)))
+        ((+ (?? pre) (* (? f1) (? thing)) (?? mid) (? thing) (?? post)) nil
+         (+ (?? pre) (* (+ 1 (? f1)) (? thing)) (?? mid) (?? post)))
+        ;; Canonicalize +,*
+        (((? op +/*?) (?? terms))
+         (not (sorted? (quote (? terms)) #'alg<))
+         ((? op) (:SPLICE (sort (quote (? terms)) #'alg<))))))

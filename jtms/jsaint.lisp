@@ -11,12 +11,17 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/jtms/jsaint
+  (:use #:cl #:bps/jtms #:bps/jtms/simplify)
+  (:export))
+
+(in-package #:bps/jtms/jsaint)
 
 (defstruct (Jsaint
-                   (:PRINT-FUNCTION (lambda (a st ignore)
-                                      (format st "<Agenda ~A>"
-                                              (jsaint-title a)))))
+             (:PRINT-FUNCTION (lambda (a st ignore)
+                                (declare (ignore ignore))
+                                (format st "<Agenda ~A>"
+                                        (jsaint-title a)))))
   (title "")           ;; Name for printing
   (jtre nil)           ;; Associated JTRE
   (agenda nil)         ;; List of queued subproblems
@@ -57,16 +62,9 @@
 
 (defun use-jsaint (js) (setq *jsaint* js))
 
-(defmacro with-jsaint (js &rest forms) `(let ((*ag* ,js)) ,@ forms))
+(defmacro with-jsaint (js &rest forms) `(let ((*jsaint* ,js)) ,@ forms))
 
 ;;;; User entry point
-
-(defvar *jsaint-rules*  ;; Fundamentals
-  #+UNIX "/u/bps/code/jtms/jsrules.lisp"
-  #+MCL "Macintosh HD:BPS:jtms:jsrules.fasl")
-(defvar *jsaint-operators*  ;; Operators
-  #+UNIX "/u/bps/code/jtms/jsops.lisp"
-  #+MCL "Macintosh HD:BPS:jtms:jsops.fasl")
 
 (defun solve-integral (integral
                        &key (title (symbol-name (gensym)))
@@ -79,8 +77,8 @@
                              :MAX-TASKS max-tasks))
   (queue-problem (jsaint-problem *jsaint*) nil)
   (with-JTRE (jsaint-jtre *jsaint*)
-             (load *jsaint-rules*)
-             (load *jsaint-operators*))
+    (load "jsrules")
+    (load "jsops"))
   (run-jsaint *jsaint*))
 
 (defun explain-result (&optional (*jsaint* *jsaint*))
@@ -165,6 +163,7 @@
 ;; alone, since there could be multiple parents for a subproblem.
 
 (defun queue-problem (problem parent &aux entry)
+  (declare (ignore parent))
   (setq entry (cons (estimate-difficulty problem) problem))
   (debugging-jsaint *jsaint* "~%   Queueing ~A, difficulty = ~D"
                     problem (car entry))
@@ -197,7 +196,7 @@
       (return-from fetch-solution (third solution)))))
 
 (defun jsaint-contradiction-handler (contradictions jtms)
-  (ask-user-hander contradictions jtms)) ;; default
+  (ask-user-handler contradictions jtms)) ;; default
 
 ;;;; Defining operators
 
@@ -342,6 +341,7 @@
                        (jsaint-problem *jsaint*)
                        0 (list (cons (jsaint-problem *jsaint*) 0))
                        (list (jsaint-problem *jsaint*)))))
+    (declare (ignore problems))
     (setq depth-table
           (sort depth-table #'(lambda (x y) (< (cdr x) (cdr y)))))
     (dolist (pair depth-table)
@@ -381,7 +381,7 @@
 (defvar problem1 '(Integrate (Integral 1 x)))
 (defvar problem2 '(Integrate (integral (+ x 5) x)))
 (defvar problem3 '(Integrate (integral (* 46 (log x %e)) x)))
-(setq problem4 '(Integrate
-                 (integral (+ 0.63
-                            (* 3.2 (sin (* 1.7 x)))
-                            (* 4 (expt %e (* 2 x)))) x)))
+(defvar problem4 '(Integrate
+                   (integral (+ 0.63
+                              (* 3.2 (sin (* 1.7 x)))
+                              (* 4 (expt %e (* 2 x)))) x)))

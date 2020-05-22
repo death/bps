@@ -14,7 +14,26 @@
 ;;; This version is inspired by one of G.J. Sussman's scheme matchers.
 ;;; We eschew continuation-passing, for clarity.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/jtms/match
+  (:use #:cl)
+  (:export
+   #:match
+   #:equal?
+   #:pattern-variable?
+   #:element-var?
+   #:segment-var?
+   #:var-name
+   #:var-restriction
+   #:lookup-var
+   #:var-value
+   #:segment-beg
+   #:segment-end
+   #:segment->list
+   #:bind-element-var
+   #:bind-segment-var
+   #:substitute-in))
+
+(in-package #:bps/jtms/match)
 
 ;;; There are two kinds of variables.
 ;;; Element variables match a single element of a list.
@@ -59,7 +78,7 @@
 ;;;; Finding matches for segment variables
 ;; This is non-deterministic, hence requires iteration.
 
-(defun match-segment-var (pat dat dict &aux entry pred end rest)
+(defun match-segment-var (pat dat dict &aux entry rest)
   (setq entry (lookup-var (car pat) dict))
   (cond (entry ;; check for match
          (setq rest

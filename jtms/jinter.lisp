@@ -40,7 +40,8 @@
    #:show-rules
    #:assert!
    #:assume!
-   #:enqueue))
+   #:enqueue
+   #:view-node))
 
 (in-package #:bps/jtms/jinter)
 
