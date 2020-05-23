@@ -12,7 +12,43 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/ltms/cltms
+  (:use #:cl)
+  (:export
+   #:map-over
+   #:add-formula
+   #:normalize-disjunction
+   #:normalize-conjunction
+   #:disjoin-clauses
+   #:compile-formula
+   #:add-clause
+   #:simplify-consensus
+   #:simplify-subsume-consensus
+   #:insert-clause
+   #:index-clause
+   #:literal-connections
+   #:propagate-more-unknownness
+   #:full-add-clause
+   #:insert-list2
+   #:insert-queue
+   #:insert-list
+   #:complete-ltms
+   #:delay-sat?
+   #:ipia
+   #:subsumed?
+   #:add-to-trie
+   #:build-trie
+   #:remove-subsumed
+   #:walk-trie
+   #:collect
+   #:remove-clause
+   #:install-clause
+   #:process-clause
+   #:tms-env
+   #:pi ;; change to prime-implicates
+   ))
+
+(in-package #:bps/ltms/cltms)
 
 ;;; Adding formulas and clauses.
 

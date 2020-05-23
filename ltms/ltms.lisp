@@ -13,7 +13,105 @@
 
 (defpackage #:bps/ltms/ltms
   (:use #:cl)
-  (:export))
+  (:export
+   #:ltms
+   #:ltms-p
+   #:ltms-title
+   #:ltms-node-counter
+   #:ltms-clause-counter
+   #:ltms-nodes
+   #:ltms-clauses
+   #:ltms-debugging
+   #:ltms-checking-contradictions
+   #:ltms-node-string
+   #:ltms-contradiction-handlers
+   #:ltms-pending-contradictions
+   #:ltms-enqueue-procedure
+   #:ltms-complete
+   #:ltms-violated-clauses
+   #:ltms-queue
+   #:ltms-conses
+   #:ltms-delay-sat
+   #:ltms-cons-size
+   #:tms-node
+   #:tms-node-p
+   #:tms-node-index
+   #:tms-node-datum
+   #:tms-node-label
+   #:tms-node-support
+   #:tms-node-true-clauses
+   #:tms-node-false-clauses
+   #:tms-node-mark
+   #:tms-node-assumption?
+   #:tms-node-true-rules
+   #:tms-node-false-rules
+   #:tms-node-ltms
+   #:tms-node-true-literal
+   #:tms-node-false-literal
+   #:clause
+   #:clause-p
+   #:clause-index
+   #:clause-informant
+   #:clause-literals
+   #:clause-pvs
+   #:clause-length
+   #:clause-sats
+   #:clause-status
+   #:node-string
+   #:debugging-ltms
+   #:ltms-error
+   #:default-node-string
+   #:satisfied-clause?
+   #:violated-clause?
+   #:walk-clauses
+   #:create-ltms
+   #:change-ltms
+   #:unknown-node?
+   #:known-node?
+   #:true-node?
+   #:false-node?
+   #:tms-create-node
+   #:enable-assumption
+   #:convert-to-assumption
+   #:retract-assumption
+   #:add-formula
+   #:simplify-clause
+   #:sort-clause
+   #:*ltms*
+   #:find-node
+   #:compile-formula
+   #:expand-formula
+   #:add-clause
+   #:add-nogood
+   #:check-clauses
+   #:propagate-unknownness
+   #:clause-consequent
+   #:find-alternative-support
+   #:check-for-contradictions
+   #:contradiction-handler
+   #:without-contradiction-check
+   #:with-contradiction-check
+   #:with-contradiction-handler
+   #:with-assumptions
+   #:support-for-node
+   #:assumptions-of-node
+   #:assumptions-of-clause
+   #:*contra-assumptions*
+   #:ask-user-handler
+   #:tms-answer
+   #:avoid-all
+   #:why-node
+   #:why-nodes
+   #:explain-node
+   #:show-node-consequences
+   #:node-show-clauses
+   #:explore-network
+   ;; Complete LTMS
+   #:full-add-clause
+   #:ipia
+   #:propagate-more-unknownness
+   #:walk-trie
+   ))
 
 (in-package #:bps/ltms/ltms)
 
@@ -82,10 +180,9 @@
 (defun node-string (node)
   (funcall (ltms-node-string (tms-node-ltms node)) node))
 
-(defmacro debugging-ltms (ltms msg &optional node &rest args)
+(defmacro debugging-ltms (ltms msg &rest args)
   `(when (ltms-debugging ,ltms)
-     (format *trace-output*
-             ,msg (if ,node (node-string ,node)) ,@args)))
+     (format *trace-output* ,msg ,@args)))
 
 (defun ltms-error (string &optional thing)
   (error string thing))
@@ -93,9 +190,11 @@
 (defun default-node-string (n)
   (format nil "~A" (tms-node-datum n)))
 
-(defmacro satisfied-clause? (clause) `(> (clause-sats ,clause) 0))
+(defmacro satisfied-clause? (clause)
+  `(> (clause-sats ,clause) 0))
 
-(defmacro violated-clause? (clause) `(= (clause-pvs ,clause) 0))
+(defmacro violated-clause? (clause)
+  `(= (clause-pvs ,clause) 0))
 
 (defmacro walk-clauses (ltms f)
   `(if (ltms-complete ,ltms)
@@ -149,13 +248,17 @@
   (if complete? (setf (ltms-complete ltms) complete))
   (if delay-sat? (setf (ltms-delay-sat ltms) delay-sat)))
 
-(defun unknown-node? (node) (eq (tms-node-label node) :UNKNOWN))
+(defun unknown-node? (node)
+  (eq (tms-node-label node) :UNKNOWN))
 
-(defun known-node? (node) (not (eq (tms-node-label node) :UNKNOWN)))
+(defun known-node? (node)
+  (not (eq (tms-node-label node) :UNKNOWN)))
 
-(defun true-node? (node) (eq (tms-node-label node) :TRUE))
+(defun true-node? (node)
+  (eq (tms-node-label node) :TRUE))
 
-(defun false-node? (node) (eq (tms-node-label node) :FALSE))
+(defun false-node? (node)
+  (eq (tms-node-label node) :FALSE))
 
 
 (defun tms-create-node (ltms datum &key assumptionp)
@@ -223,7 +326,8 @@
 
 (defvar *ltms*)
 
-(defun normalize (*ltms* exp) (normalize-1 exp nil))
+(defun normalize (*ltms* exp)
+  (normalize-1 exp nil))
 
 (defun normalize-1 (exp negate)
   (case (and (listp exp) (car exp))
@@ -291,6 +395,7 @@
 
 (defun generate-code (ltms run-tms informant &aux result bound datum)
   (maphash #'(lambda (ignore symbol)
+               (declare (ignore ignore))
                (when (or (tms-node-true-clauses symbol)
                          (tms-node-false-clauses symbol))
                  (setq datum (tms-node-datum symbol))
@@ -337,7 +442,7 @@
 ;;; Adding clauses
 (defun add-clause (true-nodes false-nodes &optional informant)
   (add-clause-internal (nconc (mapcar #'tms-node-true-literal true-nodes)
-                              (mapcar #'tms-node-false false-nodes))
+                              (mapcar #'tms-node-false-literal false-nodes))
                        informant
                        nil))
 
@@ -386,6 +491,8 @@
 
 ;;; Boolean Constraint Propagation.
 
+(defvar *clauses-to-check* nil)
+
 (proclaim '(special *clauses-to-check*))
 
 (defun check-clauses (ltms *clauses-to-check*)
@@ -406,7 +513,8 @@
 
 (defun find-unknown-pair (clause)
   (dolist (term-pair (clause-literals clause))
-    (if (unknown-node? (car term-pair)) (return term-pair))))
+    (if (unknown-node? (car term-pair))
+        (return term-pair))))
 
 (defun top-set-truth (node value reason &aux *clauses-to-check*)
   (set-truth node value reason)
@@ -559,6 +667,8 @@
         (setf (tms-node-mark node) mark)))))
 
 ;;; Simple user interface
+(defvar *contra-assumptions* nil)
+
 (proclaim '(special *contra-assumptions*))
 
 (defun ask-user-handler (contradictions ltms)
@@ -600,6 +710,7 @@
       (format t "~%Ignoring answer, must be an integer.")))
 
 (defun avoid-all (contradictions ignore &aux culprits culprit sign)
+  (declare (ignore ignore))
   (dolist (contradiction contradictions)
     (when (violated-clause? contradiction)
       (unless (setq culprits (assumptions-of-clause contradiction))
@@ -616,7 +727,8 @@
       (push (car pair) result))))
 
 (defun signed-node-string (node)
-  (if (true-node? node) (node-string node)
+  (if (true-node? node)
+      (node-string node)
       (format nil "~:[Unknown~;Not~][~A]"
               (false-node? node) (node-string node))))
 
@@ -652,14 +764,19 @@
   node)
 
 (defun why-nodes (ltms)
-  (maphash #'(lambda (ignore n) (why-node n)) (ltms-nodes ltms)))
+  (maphash #'(lambda (ignore n)
+               (declare (ignore ignore))
+               (why-node n))
+           (ltms-nodes ltms)))
 
 (defvar *line-count*)
 
 (defun explain-node (node &aux *line-count*)
   (unless (eq (tms-node-label node) :UNKNOWN)
     (setq *line-count* 0)
-    (maphash #'(lambda (ignore node) (setf (tms-node-mark node) nil))
+    (maphash #'(lambda (ignore node)
+                 (declare (ignore ignore))
+                 (setf (tms-node-mark node) nil))
              (ltms-nodes (tms-node-ltms node)))
     (explain-1 node)))
 
@@ -714,9 +831,8 @@
        (current node)
        (mode :ante)
        (options nil)
-       (olen 0)
-       (done? nil))
-      (done? current)
+       (olen 0))
+      (nil)
       (cond ((eq mode :ante)
              (why-node current)
              (setq options (if (typep (tms-node-support current) 'clause)
