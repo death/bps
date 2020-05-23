@@ -103,6 +103,7 @@
    #:why-node
    #:why-nodes
    #:explain-node
+   #:pretty-print-clauses
    #:show-node-consequences
    #:node-show-clauses
    #:explore-network
