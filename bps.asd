@@ -10,7 +10,8 @@
                                '(#:bps/cps
                                  #:bps/tre
                                  #:bps/ftre
-                                 #:bps/jtms))
+                                 #:bps/jtms
+                                 #:bps/ltms))
 
 (asdf:defsystem #:bps
   :description "Code from Building Problem Solvers"
@@ -19,4 +20,5 @@
   :depends-on ("bps/cps/all"
                "bps/tre/all"
                "bps/ftre/all"
-               "bps/jtms/all"))
+               "bps/jtms/all"
+               "bps/ltms/all"))

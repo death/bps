@@ -19,20 +19,20 @@
   (unless (known? fact)
     (with-contradiction-handler (ltre-ltms *ltre*)
       #'(lambda (contradictions ltms &aux assumptions)
-	  (setq assumptions
-		(assumptions-of-clause
-		 (car contradictions)))
-	  (let ((the-node
-		 (find (datum-tms-node (referent fact T))
-		       assumptions)))
-	    (when the-node
-	      (let ((status (tms-node-label the-node)))
-		(retract-assumption the-node)
-		(add-nogood the-node status
-			    assumptions)))))
+          (setq assumptions
+                (assumptions-of-clause
+                 (car contradictions)))
+          (let ((the-node
+                 (find (datum-tms-node (referent fact T))
+                       assumptions)))
+            (when the-node
+              (let ((status (tms-node-label the-node)))
+                (retract-assumption the-node)
+                (add-nogood the-node status
+                            assumptions)))))
       ;; Assume the negation
        (assuming `((:NOT ,fact)) *LTRE*
-		 (run-rules)))
+                 (run-rules)))
    (known? fact)))
 
 ;;;; Example of indirect proof

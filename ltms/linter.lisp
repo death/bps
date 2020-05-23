@@ -1,9 +1,9 @@
-;; -*- Mode: Lisp; -*- 
+;; -*- Mode: Lisp; -*-
 
-;;;; LTRE definitions  
+;;;; LTRE definitions
 ;;;; Last edited 1/29/93, by KDF
 
-;;; Copyright 1986, 1989, 1990, 1991 Kenneth D. Forbus, 
+;;; Copyright 1986, 1989, 1990, 1991 Kenneth D. Forbus,
 ;;; Nortwestern University, and Johan de Kleer, Xerox Corporation.
 ;;; All Rights Reserved.
 
@@ -44,15 +44,15 @@
   `(when (ltre-debugging *LTRE*) (format t ,msg  ,@args)))
 
 (defun create-ltre (title &key debugging)
-   (let ((l (make-ltre :TITLE title 
-               :LTMS (create-ltms (list :LTMS-OF title) 
+   (let ((l (make-ltre :TITLE title
+               :LTMS (create-ltms (list :LTMS-OF title)
                         :NODE-STRING 'make-node-string
                         :CACHE-DATUMS? nil)
-	   :DBCLASS-TABLE (make-hash-table)
-	   :DEBUGGING debugging)))
+           :DBCLASS-TABLE (make-hash-table)
+           :DEBUGGING debugging)))
    (change-ltms (ltre-ltms l)
-		:ENQUEUE-PROCEDURE
-		#'(lambda (pair) (enqueue pair l)))
+                :ENQUEUE-PROCEDURE
+                #'(lambda (pair) (enqueue pair l)))
    (setq *LTRE* l)))
 
 (defun change-ltre (ltre &key (debugging nil debugging?))
@@ -64,7 +64,7 @@
   (assert! fact just) ;; Do internal operation
   (run-rules *ltre*))        ;; Run the rules
 
-(defun uassume! (fact reason &optional (*ltre* *ltre*)) 
+(defun uassume! (fact reason &optional (*ltre* *ltre*))
   (assume! fact reason)
   (run-rules *ltre*))
 
@@ -80,23 +80,22 @@
         (format t "~%>>")))
 
 (defun show (&optional (*LTRE* *LTRE*) (stream *standard-output*))
-  (format stream "For LTRE ~A:" (ltre-title *LTRE*)) 
+  (format stream "For LTRE ~A:" (ltre-title *LTRE*))
   (show-data *LTRE* stream) (show-rules *LTRE* stream))
 
 ;;;; Some debugging stuff
 
 (defun show-by-informant (informant &optional (*LTRE* *LTRE*)
-				    &aux (count 0))
+                                    &aux (count 0))
   (dolist (clause (ltms-clauses (ltre-ltms *LTRE*)) count)
-	  (when (if (listp (clause-informant clause))
-		    (eq (third (clause-informant clause)) informant)
-		  (eq (clause-informant clause) informant))
-		(incf count)
-		(pprint (view-clause clause)))))
+          (when (if (listp (clause-informant clause))
+                    (eq (third (clause-informant clause)) informant)
+                  (eq (clause-informant clause) informant))
+                (incf count)
+                (pprint (view-clause clause)))))
 
 (defun view-clause (cl)
   (cons 'OR (mapcar #'(lambda (x)
-			 (if (eq (cdr x) :FALSE) `(NOT ,(view-node (car x)))
-			   (view-node (car x))))
-		    (clause-literals cl))))
-  
+                         (if (eq (cdr x) :FALSE) `(NOT ,(view-node (car x)))
+                           (view-node (car x))))
+                    (clause-literals cl))))

@@ -16,18 +16,18 @@
 ;;;; Interface to set mechanism
 
 (defun set-members (set-name &optional (*LTRE* *LTRE*)
-			     &aux m-s)
+                             &aux m-s)
   (dolist (mform (fetch `(,set-name MEMBERS ?elements)))
-	  (if (true? mform) (return (setq m-s mform))))
+          (if (true? mform) (return (setq m-s mform))))
   (cond (m-s (values (third m-s) (find-cwa-for-set m-s)))
-	(t nil)))
+        (t nil)))
 
 (defun close-set-if-needed (set-name
-			    &optional (*LTRE* *LTRE*))
+                            &optional (*LTRE* *LTRE*))
   (multiple-value-bind (construal cwa)
-		       (set-members set-name)
+                       (set-members set-name)
   (cond (cwa (values construal cwa nil))
-	(t (close-set set-name)))))
+        (t (close-set set-name)))))
 
 (defun close-set (set-name &optional (*LTRE* *LTRE*))
    ;; UNWIND-PROTECT added for safety, otherwise a bogus CWA
@@ -45,7 +45,7 @@
                   cwa-form members-form)
                  (setq non-contradictory? t)
                  (values known-members cwa-form t)))
-         (progn 
+         (progn
             (unless non-contradictory?
                (retract-CWAs set-name))))))
 
@@ -54,19 +54,19 @@
        (close-set-if-needed ,set-name *LTRE*)
      (With-Contradiction-Handler (ltre-ltms *LTRE*)
        #'(lambda (clauses ltms)
-	   (set-cwa-handler clauses ltms ,set-name 
-			    cwa :LOST-CWA))
+           (set-cwa-handler clauses ltms ,set-name
+                            cwa :LOST-CWA))
        (let ((answer (catch cwa ,@ body)))
-	 (cond ((eq answer :LOST-CWA) (values nil nil))
-	       (t (values t members)))))))
+         (cond ((eq answer :LOST-CWA) (values nil nil))
+               (t (values t members)))))))
 
-;;;; 2nd-level procedures -- can be called by experts 
+;;;; 2nd-level procedures -- can be called by experts
 
 (defun find-cwa-for-set (m-s)
-  (dolist (asn (assumptions-of m-s)) 
-	  (when (and (cwa-form? asn)
-		     (equal (car asn) (car m-s)))
-		(return-from FIND-CWA-FOR-SET asn))))
+  (dolist (asn (assumptions-of m-s))
+          (when (and (cwa-form? asn)
+                     (equal (car asn) (car m-s)))
+                (return-from FIND-CWA-FOR-SET asn))))
 
 (defun cwa-form? (form) (eq (cadr form) 'CWA))
 
@@ -79,20 +79,20 @@
 (defun get-set-information (set-name &optional (*LTRE* *LTRE*))
   (let ((known-in nil) (known-out nil))
     (dolist (possible
-	     (fetch `(,set-name HAS-MEMBER ?member)))
+             (fetch `(,set-name HAS-MEMBER ?member)))
       (cond ((true? possible)
-	     (push (caddr possible) known-in))
-	    ((false? possible)
-	     (push (caddr possible) known-out))))
+             (push (caddr possible) known-in))
+            ((false? possible)
+             (push (caddr possible) known-out))))
     (values known-in known-out)))
 
 (defun assume-cwa-if-needed (cwa-form)
   (when (false? cwa-form); ; Going to see a contradiction soon!
-	(propagate-unknownness (get-tms-node cwa-form)))
+        (propagate-unknownness (get-tms-node cwa-form)))
   (assume! cwa-form :CWA))
 
 (defun justify-cwa-if-needed (name members not-members
-				   cwa-form members-form)
+                                   cwa-form members-form)
    ;; Since the same construal can be generated multiple times
    ;; in problem-solving, it is important to avoid creating
    ;; redundant clauses.  The previous version checked a cache
@@ -119,24 +119,24 @@
 
 (defun fetch-cwa-for (name)
   (dolist (cwa (fetch `(,name CWA . ?x)))
-	  (when (true? cwa) (return-from fetch-cwa-for cwa))))
+          (when (true? cwa) (return-from fetch-cwa-for cwa))))
 
 ;;;; Contradiction handling and backing up for CWA's
 
 ;;; This procedure detects when a CWA lurks within
-;;; one of the LTMS' contradictions, and does a THROW 
+;;; one of the LTMS' contradictions, and does a THROW
 ;;; to a designated tag to signal the assumer that
-;;; the set is no longer believed. 
+;;; the set is no longer believed.
 
 (defun set-cwa-handler (clauses ltms set-name cwa tag
-				&aux asns losers)
+                                &aux asns losers)
   (let ((cwa-node (get-tms-node cwa)))
    (dolist (cl clauses) ;; For each contradictory clause,
     (setq asns (assumptions-of-clause cl))
     (when (and (member cwa-node asns) ;; Quick filter
-	       (CWA-invalid? cwa))
-	  (retract-CWA cwa)
-	  (throw cwa tag)))))
+               (CWA-invalid? cwa))
+          (retract-CWA cwa)
+          (throw cwa tag)))))
 
 (defun retract-CWA (cwa)
   (retract! cwa (already-assumed? cwa)))
@@ -145,18 +145,18 @@
   (multiple-value-bind (set-name presumed-els)
    (parse-cwa-form cwa)
    (dolist (el presumed-els)
-    (unless (true? `(,set-name HAS-MEMBER ,el)) 
-	    (return-from CWA-invalid? T)))
+    (unless (true? `(,set-name HAS-MEMBER ,el))
+            (return-from CWA-invalid? T)))
    (dolist (hm-form (fetch `(,set-name has-member ?el)))
     (when (true? hm-form)
      (unless (member (third hm-form) presumed-els
-		     :TEST #'equal)
-	     (return-from CWA-invalid? t))))))
+                     :TEST #'equal)
+             (return-from CWA-invalid? t))))))
 
 (defun retract-CWAs (set)
   (dolist (cwa (fetch `(,set CWA ?members)))
    (if (and (known? cwa)
-	    (already-assumed? cwa)) 
+            (already-assumed? cwa))
        (retract! cwa (already-assumed? cwa)))))
 
 ;;;; A simple example
@@ -165,9 +165,9 @@
   (In-LTRE (create-ltre "CWA Test" :DEBUGGING debugging?))
   (bps-load-file *ltre-path* *set-rule-file*)
   (dolist (data '((set (Parts System))  ;; Assume initial parts
-		  ((Parts System) HAS-MEMBER valve)
-		  ((Parts System) HAS-MEMBER meter)
-		  ((Parts System) HAS-MEMBER pump)))
+                  ((Parts System) HAS-MEMBER valve)
+                  ((Parts System) HAS-MEMBER meter)
+                  ((Parts System) HAS-MEMBER pump)))
     (assume! data :INITIAL-OBSERVATIONS))
   (do ((form nil)
        (stop? nil)
@@ -175,20 +175,20 @@
       (stop? nil)
       (With-Closed-Set
        '(Parts System)
-       (setq partslist 
-	     (remove-if-not #'(lambda (form)
-				(true? form))
-			    (fetch `((Parts System) MEMBERS ?els))))
+       (setq partslist
+             (remove-if-not #'(lambda (form)
+                                (true? form))
+                            (fetch `((Parts System) MEMBERS ?els))))
        (cond ((cdr partslist)
-	      (format t "~%BUG: Conflicting membership forms.")
-	      (dolist (pl partslist)
-		      (format t "Parts(System) = ~A" pl)))
-	     (t (format t "~% Parts are: ~A" (third (car partslist)))))
+              (format t "~%BUG: Conflicting membership forms.")
+              (dolist (pl partslist)
+                      (format t "Parts(System) = ~A" pl)))
+             (t (format t "~% Parts are: ~A" (third (car partslist)))))
        (cond ((member form '(quit stop end exit)) (setq stop? t))
-	     (t (format t "~%>")
-		(setq form (read))
-		(print (eval form))
-		(run-rules))))))
+             (t (format t "~%>")
+                (setq form (read))
+                (print (eval form))
+                (run-rules))))))
 
 ;;;; Shakedown procedure
 
@@ -197,15 +197,15 @@
   (bps-load-file *ltre-path* *set-rule-file*)
   (uassert! '(set foo) :USER)
   (with-closed-set 'foo
-		   (uassume! '(foo has-member a) :A-IN))
+                   (uassume! '(foo has-member a) :A-IN))
   (with-closed-set 'foo
-		   (uassume! '(foo has-member b) :B-IN))
+                   (uassume! '(foo has-member b) :B-IN))
   (with-closed-set 'foo (run-rules))
   (if (true? `(foo members (b a)))
       (format t "~% (A B) closure okay.")
     (break "First error"))
   (with-closed-set 'foo
-		   (uassume! '(foo has-member c) :C-IN))
+                   (uassume! '(foo has-member c) :C-IN))
   (with-closed-set 'foo (run-rules))
   (if (true? `(foo members (c b A)))
       (format t "~% (A B C) closure okay.")
@@ -222,5 +222,3 @@
       (format t "~% Unouting handled okay.")
     (break "Fourth error"))
   (format t "~% If no breaks occurred, CWA's look okay."))
-  
-  

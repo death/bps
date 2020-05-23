@@ -29,11 +29,11 @@
   (dolist (choice choices)
     (debug-dds "~%    DDS: Considering ~A..." choice)
     (cond ((false? choice) ;skip if known loser
-	   (debug-dds "~%    DDS: ~A already known nogood." choice))
-	  ((true? choice) ;continue if known
-	   (debug-dds "~%    DDS: ~A true by implication." choice)
-	   (DD-Search (cdr choice-sets) end)
-	   (return nil))
+           (debug-dds "~%    DDS: ~A already known nogood." choice))
+          ((true? choice) ;continue if known
+           (debug-dds "~%    DDS: ~A true by implication." choice)
+           (DD-Search (cdr choice-sets) end)
+           (return nil))
           (t (debug-dds "~%    DDS: Assuming ~A." choice)
              (with-Contradiction-Handler (ltre-ltms *ltre*)
               #'(lambda (clauses ltms &aux asns)
@@ -71,12 +71,12 @@
 (defun Test-DD-search (&optional (debugging? t))
   (in-LTRE (create-ltre "DDS Test" :DEBUGGING debugging?))
   (eval '(rule ((:TRUE A) (:TRUE C))
-	       (rassert! (:NOT (:AND A C)) :DOMAIN-NOGOOD)))
+               (rassert! (:NOT (:AND A C)) :DOMAIN-NOGOOD)))
   (eval '(rule ((:TRUE B) (:TRUE E))
-	       (rassert! (:NOT (:AND B E)) :DOMAIN-NOGOOD)))
-  (DD-Search '((A B) (C D) (E F)) 
-	     '(show-DD-test-solution)))
-	    
+               (rassert! (:NOT (:AND B E)) :DOMAIN-NOGOOD)))
+  (DD-Search '((A B) (C D) (E F))
+             '(show-DD-test-solution)))
+
 (defun show-DD-test-solution (&aux result)
   (dolist (var '(F E D C B A))
     (when (true? var *ltre*) (push var result)))

@@ -47,11 +47,11 @@
 
 (defun test-rules ()
   (eval `(rule ((:TRUE (foo ?x) :VAR ?f1)
-		(:TRUE (bar ?y) :VAR ?f2))
-	       (rassert! (:IMPLIES (:AND ?f1 ?f2) (mumble ?x ?y)) 'hack)))
+                (:TRUE (bar ?y) :VAR ?f2))
+               (rassert! (:IMPLIES (:AND ?f1 ?f2) (mumble ?x ?y)) 'hack)))
     (eval `(rule ((:INTERN (foo ?x) :VAR ?f1)
-		  (:INTERN (bar ?y) :VAR ?f2))
-	       (rassert! (:IMPLIES (:AND ?f1 ?f2) (grumble ?x ?y)) 'hack)))
+                  (:INTERN (bar ?y) :VAR ?f2))
+               (rassert! (:IMPLIES (:AND ?f1 ?f2) (grumble ?x ?y)) 'hack)))
   (referent '(foo 1) t)
   (referent '(bar 1) t)
   (run-rules)
