@@ -11,7 +11,35 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/ltms/cwa
+  (:use #:cl
+        #:bps/ltms/ltms
+        #:bps/ltms/linter
+        #:bps/ltms/ldata
+        #:bps/ltms/lrules)
+  (:export
+   #:set
+   #:members
+   #:has-member
+   #:cwa-justification
+   #:set-members
+   #:close-set-if-needed
+   #:close-set
+   #:with-closed-set
+   #:find-cwa-for-set
+   #:cwa-form?
+   #:make-cwa-form
+   #:parse-cwa-form
+   #:get-set-information
+   #:assume-cwa-if-needed
+   #:justify-cwa-if-needed
+   #:fetch-cwa-for
+   #:set-cwa-handler
+   #:retract-cwa
+   #:cwa-invalid?
+   #:retract-cwas))
+
+(in-package #:bps/ltms/cwa)
 
 ;;;; Interface to set mechanism
 
@@ -163,8 +191,8 @@
 
 (defun cwa-interactive-test (&optional (debugging? nil))
   (In-LTRE (create-ltre "CWA Test" :DEBUGGING debugging?))
-  (bps-load-file *ltre-path* *set-rule-file*)
-  (dolist (data '((set (Parts System))  ;; Assume initial parts
+  (load "setrule")
+  (dolist (data '((set (Parts System)) ;; Assume initial parts
                   ((Parts System) HAS-MEMBER valve)
                   ((Parts System) HAS-MEMBER meter)
                   ((Parts System) HAS-MEMBER pump)))
@@ -173,28 +201,29 @@
        (stop? nil)
        (partslist nil))
       (stop? nil)
-      (With-Closed-Set
-       '(Parts System)
-       (setq partslist
-             (remove-if-not #'(lambda (form)
-                                (true? form))
-                            (fetch `((Parts System) MEMBERS ?els))))
-       (cond ((cdr partslist)
-              (format t "~%BUG: Conflicting membership forms.")
-              (dolist (pl partslist)
-                      (format t "Parts(System) = ~A" pl)))
-             (t (format t "~% Parts are: ~A" (third (car partslist)))))
-       (cond ((member form '(quit stop end exit)) (setq stop? t))
-             (t (format t "~%>")
-                (setq form (read))
-                (print (eval form))
-                (run-rules))))))
+    (With-Closed-Set
+        '(Parts System)
+      (run-rules)
+      (setq partslist
+            (remove-if-not #'(lambda (form)
+                               (true? form))
+                           (fetch `((Parts System) MEMBERS ?els))))
+      (cond ((cdr partslist)
+             (format t "~%BUG: Conflicting membership forms.")
+             (dolist (pl partslist)
+               (format t "Parts(System) = ~A" pl)))
+            (t (format t "~% Parts are: ~A" (third (car partslist)))))
+      (format t "~%>")
+      (setq form (read))
+      (cond ((member form '(quit stop end exit)) (setq stop? t))
+            (t (print (eval form))
+               (run-rules))))))
 
 ;;;; Shakedown procedure
 
 (defun cwa-shakedown ()
   (in-ltre (create-ltre "CWA Test One" :DEBUGGING t))
-  (bps-load-file *ltre-path* *set-rule-file*)
+  (load "setrule")
   (uassert! '(set foo) :USER)
   (with-closed-set 'foo
                    (uassume! '(foo has-member a) :A-IN))

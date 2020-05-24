@@ -11,7 +11,12 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/ltms/laccept
+  (:use #:cl #:bps/ltms)
+  (:export
+   #:test-ltre))
+
+(in-package #:bps/ltms/laccept)
 
 (defun test-ltre ()
   (in-ltre (create-ltre "Debugging LTRE"))

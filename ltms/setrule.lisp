@@ -11,8 +11,6 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
-
 (rule ((:TRUE (set ?name) :VAR ?f1))
   (rule ((:INTERN (?name members ?construal1) :VAR ?f2))
     (rule ((:INTERN (?name has-member ?new) :VAR ?f3

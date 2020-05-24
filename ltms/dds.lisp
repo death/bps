@@ -12,7 +12,15 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/ltms/dds
+  (:use #:cl
+        #:bps/ltms/ltms
+        #:bps/ltms/linter
+        #:bps/ltms/ldata
+        #:bps/ltms/lrules)
+  (:export))
+
+(in-package #:bps/ltms/dds)
 
 (defvar *debug-dds* nil)
 

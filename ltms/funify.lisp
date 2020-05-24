@@ -11,9 +11,21 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/ltms/funify
+  (:use #:cl #:bps/ltms/unify)
+  (:export
+   #:*bound-vars*
+   #:quotize
+   #:rlet
+   #:pattern-free-variables
+   #:generate-match-body
+   #:P
+   #:fully-expand-body))
 
-(proclaim '(special *bound-vars*))
+(in-package #:bps/ltms/funify)
+
+(defvar *bound-vars*
+  nil)
 
 (defun quotize (pattern)
   (cond ((null pattern) nil)
@@ -73,7 +85,7 @@
                      var-alist))
            (push (car (last test)) binding-specs))
           (t (push test structure-tests))))
-  (setq extra-test (sublis var-alist extra-test))
+  (setq extra-test (deep-sublis var-alist extra-test))
   (when (pattern-free-variables extra-test)
     (error "Rule test includes free variable: ~A"
            extra-test))
@@ -129,3 +141,23 @@
                                        (list 'car path))
                  ;extend path in other direction
                  (list 'cdr path)))))
+
+;; DEEP-SUBLIS is similar to SUBLIS, but also properly descends into
+;; backquote expressions.
+(defun deep-sublis (alist tree)
+  (let ((entry (assoc tree alist)))
+    (cond (entry (cdr entry))
+          #+sbcl
+          ((sb-impl::comma-p tree)
+           (sb-impl::unquote
+            (deep-sublis alist (sb-impl::comma-expr tree))
+            (sb-impl::comma-kind tree)))
+          ((atom tree)
+           tree)
+          (t
+           (let ((cdr-result (deep-sublis alist (cdr tree)))
+                 (car-result (deep-sublis alist (car tree))))
+             (if (and (eql (car tree) car-result)
+                      (eql (cdr tree) cdr-result))
+                 tree
+                 (cons car-result cdr-result)))))))

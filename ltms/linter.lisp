@@ -11,7 +11,42 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/ltms/linter
+  (:use #:cl #:bps/ltms/unify #:bps/ltms/ltms)
+  (:export
+   #:ltre
+   #:ltre-p
+   #:ltre-title
+   #:ltre-ltms
+   #:ltre-dbclass-table
+   #:ltre-datum-counter
+   #:ltre-rule-counter
+   #:ltre-debugging
+   #:ltre-queue
+   #:ltre-rules-run
+   #:*ltre*
+   #:with-ltre
+   #:in-ltre
+   #:debugging-ltre
+   #:create-ltre
+   #:change-ltre
+   #:uassert!
+   #:uassume!
+   #:run-forms
+   #:run
+   #:show
+   #:show-by-informant
+   #:view-clause
+   #:assert!
+   #:assume!
+   #:enqueue
+   #:run-rules
+   #:show-data
+   #:show-rules
+   #:view-node
+   #:make-node-string))
+
+(in-package #:bps/ltms/linter)
 
 (defstruct (ltre (:PRINT-FUNCTION ltre-print-procedure))
   title                   ; Pretty name
@@ -72,30 +107,35 @@
   (dolist (form forms) (eval form) (run-rules *ltre*)))
 
 (defun run (&optional (*LTRE* *LTRE*)) ;; Toplevel driver function
-    (format T "~%>>")
-    (do ((form (read) (read)))
-        ((member form '(quit stop exit abort)) nil)
-        (format t "~%~A" (eval form))
-        (run-rules)
-        (format t "~%>>")))
+  (format T "~%>>")
+  (do ((form (read) (read)))
+      ((and (symbolp form)
+            (member form '(quit stop exit abort)
+                    :test #'string-equal))
+       nil)
+    (format t "~%~A" (eval form))
+    (run-rules)
+    (format t "~%>>")))
 
 (defun show (&optional (*LTRE* *LTRE*) (stream *standard-output*))
   (format stream "For LTRE ~A:" (ltre-title *LTRE*))
-  (show-data *LTRE* stream) (show-rules *LTRE* stream))
+  (show-data *LTRE* stream)
+  (show-rules *LTRE* stream))
 
 ;;;; Some debugging stuff
 
 (defun show-by-informant (informant &optional (*LTRE* *LTRE*)
                                     &aux (count 0))
   (dolist (clause (ltms-clauses (ltre-ltms *LTRE*)) count)
-          (when (if (listp (clause-informant clause))
-                    (eq (third (clause-informant clause)) informant)
-                  (eq (clause-informant clause) informant))
-                (incf count)
-                (pprint (view-clause clause)))))
+    (when (if (listp (clause-informant clause))
+              (eq (third (clause-informant clause)) informant)
+              (eq (clause-informant clause) informant))
+      (incf count)
+      (pprint (view-clause clause)))))
 
 (defun view-clause (cl)
   (cons 'OR (mapcar #'(lambda (x)
-                         (if (eq (cdr x) :FALSE) `(NOT ,(view-node (car x)))
-                           (view-node (car x))))
+                        (if (eq (cdr x) :FALSE)
+                            `(NOT ,(view-node (car x)))
+                            (view-node (car x))))
                     (clause-literals cl))))

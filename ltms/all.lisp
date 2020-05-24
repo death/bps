@@ -6,9 +6,12 @@
   (:nicknames #:bps/ltms)
   (:use-reexport
    #:bps/ltms/ltms
-   ;; #:bps/ltms/unify
-   ;; #:bps/ltms/jinter
-   ;; #:bps/ltms/jdata
-   ;; #:bps/ltms/jrules
-   ;; #:bps/ltms/funify
+   #:bps/ltms/unify
+   #:bps/ltms/linter
+   #:bps/ltms/ldata
+   #:bps/ltms/lrules
+   #:bps/ltms/funify
+   #:bps/ltms/indirect
+   #:bps/ltms/cwa
+   #:bps/ltms/dds
    ))

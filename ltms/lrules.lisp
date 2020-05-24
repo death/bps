@@ -13,7 +13,50 @@
 
 ;;; The RULES field of the LTRE no longer exists, since
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/ltms/lrules
+  (:use #:cl
+        #:bps/ltms/ltms
+        #:bps/ltms/linter
+        #:bps/ltms/unify
+        #:bps/ltms/funify
+        #:bps/ltms/ldata)
+  (:export
+   #:rule
+   #:rule-p
+   #:rule-counter
+   #:rule-ltre
+   #:rule-dbclass
+   #:rule-matcher
+   #:rule-body
+   #:rule-file
+   #:rule
+   #:do-rule
+   #:internal-rule
+   #:make-nested-rule
+   #:add-rule
+   #:add-internal-rule
+   #:build-rule
+   #:parse-rule-trigger
+   #:get-trigger-dbclass
+   #:with-pushed-variable-bindings
+   #:generate-body-procedure
+   #:generate-match-procedure
+   #:scratchout
+   #:generate-rule-procedure-name
+   #:*macros-to-expand*
+   #:fully-expand-body
+   #:insert-rule
+   #:try-rules
+   #:try-rule-on
+   #:run-rules
+   #:run-one-rule
+   #:rules-waiting?
+   #:enqueue
+   #:dequeue
+   #:show-rules
+   #:print-rule))
+
+(in-package #:bps/ltms/lrules)
 
 (proclaim '(special *LTRE*))
 
@@ -28,8 +71,7 @@
   (declare (ignore ignore))
   (format st "<Rule ~D>" (rule-counter r)))
 
-;;; The next three variable are used during rule construction.
-(defvar *bound-vars* nil)     ;; Keeps track of lexical envirionment
+;;; The next two variable are used during rule construction.
 (defvar *end-forms* nil)      ;; Caches procedure definitions
 (defvar *rule-indexing* nil)  ;; Caches rule indexing forms.
 ;; For adding a file-specific prefix to internal procedure names.
@@ -58,7 +100,8 @@
                    (make-nested-rule (cdr triggers) body)))
   ;; Returning this ensures that all procedure definitions
   ;; are executed before any indexing occurs.
-  `(progn ,@ *end-forms* ,@ *rule-indexing*)))
+  `(with-compilation-unit ()
+     ,@ *end-forms* ,@ *rule-indexing*)))
 
 (defmacro internal-rule (triggers &rest body)
   ;; All but the rule corresponding to the outermost
@@ -156,6 +199,7 @@
   (unless (eq condition :INTERN) (push 'trigger-node env))
   (setq fname (generate-rule-procedure-name pattern))
   `(defun ,fname ,env
+     (declare (ignorable ,@env))
      ,@ (cond ((eq condition :INTERN) body) ;; Just do it
               (t ;; Must check and see if the node's belief state
                  ;; matches the rule's requirements
@@ -173,6 +217,7 @@
         (generate-match-body pattern (pattern-free-variables pattern)
            (if var (list (cons var 'P))) test) ;; Seed with :VAR binding
     `(defun ,(generate-rule-procedure-name pattern) (P ,@ *bound-vars*)
+       (declare (ignorable ,@*bound-vars*))
        ;;first arg, P, is the pattern
        (if (and ,@ tests)
            (values T (list ,@ (if var '(P)) ,@ (reverse binding-specs))
@@ -280,7 +325,3 @@
                   (:FALSE (bar ?q ?r) :VAR ?f2)
                   (:INTERN (interesting ?r) :VAR ?f3))
                  (rassert! (:TAXONOMY ?p ?q ?f3) (:RANDOM-TEST ?f1 ?f2))))))
-
-(defun get-rule (num &optional (*LTRE* *LTRE*))
-  (dolist (rule (ltre-rules *LTRE*))
-    (when (= (rule-counter rule) num) (return-from GET-RULE rule))))

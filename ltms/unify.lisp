@@ -11,7 +11,13 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/ltms/unify
+  (:use #:cl)
+  (:export
+   #:variable?
+   #:unify))
+
+(in-package #:bps/ltms/unify)
 
 (defun variable? (x)
   (and (symbolp x)      ;A symbol whose first character is "?"

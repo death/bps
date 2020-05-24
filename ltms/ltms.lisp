@@ -824,7 +824,7 @@
     (format T "~%") (pretty-print-clause cl)))
 
 
-(defun explore-network (node)
+(defun explore-network (node &aux (*package* (find-package "BPS/LTMS/LTMS")))
   (unless (known-node? node)
           (format t "~% Sorry, ~A not believed." (node-string node))
           (return-from explore-network node))

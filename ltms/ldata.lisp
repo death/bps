@@ -11,7 +11,69 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/ltms/ldata
+  (:use #:cl
+        #:bps/ltms/unify
+        #:bps/ltms/linter
+        #:bps/ltms/ltms
+        #:bps/ltms/funify)
+  (:export
+   #:dbclass
+   #:dbclass-p
+   #:dbclass-name
+   #:dbclass-ltre
+   #:dbclass-facts
+   #:dbclass-rules
+   #:datum
+   #:datum-p
+   #:datum-counter
+   #:datum-ltre
+   #:datum-lisp-form
+   #:datum-tms-node
+   #:datum-dbclass
+   #:datum-assumption?
+   #:datum-plist
+   #:form<
+   #:*connective-list*
+   #:simple-proposition?
+   #:negated-proposition?
+   #:assert!
+   #:assume!
+   #:already-assumed?
+   #:quiet-assert!
+   #:rassert!
+   #:build-tms-formula
+   #:retract!
+   #:rretract!
+   #:contradiction
+   #:assuming
+   #:get-dbclass
+   #:referent
+   #:insert
+   #:fetch
+   #:get-candidates
+   #:map-dbclass
+   #:true?
+   #:false?
+   #:known?
+   #:unknown?
+   #:label-of
+   #:why?
+   #:get-tms-node
+   #:view-node
+   #:signed-view-node
+   #:show-datum
+   #:make-node-string
+   #:assumptions-of
+   #:consequences
+   #:explore
+   #:show-data
+   #:get-datum
+   #:get-clause
+   #:fetch-global
+   #:try-rules))
+
+(in-package #:bps/ltms/ldata)
 
 (defstruct (dbclass (:PRINT-FUNCTION dbclass-print-procedure))
   name    ; Corresponding symbol
@@ -82,11 +144,12 @@
                   (show-datum datum) (datum-assumption? datum) reason)))
   datum)
 
-(defun already-assumed? (fact) (datum-assumption? (referent fact t)))
+(defun already-assumed? (fact)
+  (datum-assumption? (referent fact t)))
 
 (defun quiet-assert! (fact *LTRE* &optional (just 'user))
   (without-contradiction-check (ltre-ltms *LTRE*)
-                  (assert! fact *LTRE* just)))
+    (assert! fact *LTRE* just)))
 
 (defmacro rassert! (fact &optional (just 'user))
   `(assert! ,(quotize fact) ,(quotize just)))
@@ -238,7 +301,8 @@
 (defun get-tms-node (fact &optional (*LTRE* *LTRE*))
   (datum-tms-node (referent fact t)))
 
-(defun view-node (d) (datum-lisp-form (tms-node-datum d)))
+(defun view-node (d)
+  (datum-lisp-form (tms-node-datum d)))
 
 (defun signed-view-node (d) ;; For creating terms in clauses
   (if (false-node? d) (list :NOT (view-node d))

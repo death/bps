@@ -11,29 +11,39 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/ltms/indirect
+  (:use #:cl
+        #:bps/ltms/ltms
+        #:bps/ltms/linter
+        #:bps/ltms/ldata
+        #:bps/ltms/lrules)
+  (:export
+   #:try-indirect-proof))
+
+(in-package #:bps/ltms/indirect)
 
 (proclaim '(special *LTRE*))
 
 (defun try-indirect-proof (fact &optional (*LTRE* *LTRE*))
   (unless (known? fact)
     (with-contradiction-handler (ltre-ltms *ltre*)
-      #'(lambda (contradictions ltms &aux assumptions)
-          (setq assumptions
-                (assumptions-of-clause
-                 (car contradictions)))
-          (let ((the-node
-                 (find (datum-tms-node (referent fact T))
-                       assumptions)))
-            (when the-node
-              (let ((status (tms-node-label the-node)))
-                (retract-assumption the-node)
-                (add-nogood the-node status
-                            assumptions)))))
+        #'(lambda (contradictions ltms &aux assumptions)
+            (declare (ignore ltms))
+            (setq assumptions
+                  (assumptions-of-clause
+                   (car contradictions)))
+            (let ((the-node
+                   (find (datum-tms-node (referent fact T))
+                         assumptions)))
+              (when the-node
+                (let ((status (tms-node-label the-node)))
+                  (retract-assumption the-node)
+                  (add-nogood the-node status
+                              assumptions)))))
       ;; Assume the negation
-       (assuming `((:NOT ,fact)) *LTRE*
-                 (run-rules)))
-   (known? fact)))
+      (assuming `((:NOT ,fact)) *LTRE*
+        (run-rules)))
+    (known? fact)))
 
 ;;;; Example of indirect proof
 
