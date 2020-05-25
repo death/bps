@@ -34,16 +34,16 @@
   (format st "<TGizmo ~A>" (tgizmo-title tg)))
 
 (defun create-tgizmo (title &key (debugging nil)
-			    (scenario nil)
-			    (measurements nil))
+                            (scenario nil)
+                            (measurements nil))
   (let ((tg (make-tgizmo :TITLE title
-			 :LTRE (create-ltre (concatenate 'string
-							 "LTRE of " title))
-			 :DEBUGGING debugging
-			 :SCENARIO scenario
-			 :MEASUREMENTS measurements)))
+                         :LTRE (create-ltre (concatenate 'string
+                                                         "LTRE of " title))
+                         :DEBUGGING debugging
+                         :SCENARIO scenario
+                         :MEASUREMENTS measurements)))
     (push 'IR-CWA-Contradiction-Handler (ltms-contradiction-handlers
-					 (ltre-ltms (tgizmo-ltre tg))))
+                                         (ltre-ltms (tgizmo-ltre tg))))
     (in-tgizmo tg)
     tg))
 
@@ -51,16 +51,16 @@
 
 (defmacro debugging-tgizmo (key msg &rest args)
   `(when (member ,key (tgizmo-debugging *tgizmo*))
-	 (format t ,msg ,@ args)))
+         (format t ,msg ,@ args)))
 
 (defmacro when-debugging-tgizmo (key &rest code)
   `(when (member ,key (tgizmo-debugging *tgizmo*))
-	 ,@ code))
+         ,@ code))
 
 (defun change-tgizmo (tg &key (debugging :NADA))
   (unless (eq debugging :NADA) (setf (tgizmo-debugging tg) debugging)))
 
-(defun in-tgizmo (tg) 
+(defun in-tgizmo (tg)
   (setq *tgizmo* tg)
   (in-ltre (tgizmo-ltre tg))
   tg)
@@ -74,7 +74,7 @@
 ;;    be re-derived.  (Although perhaps not with the same support!)
 
 (defstruct (state
-	    (:PRINT-FUNCTION tg-state-printer))
+            (:PRINT-FUNCTION tg-state-printer))
   (title nil)
   (individuals nil)
   (view-structure nil)
@@ -89,31 +89,31 @@
 ;;;; Some useful utilities
 
 (defun tg-fetch (form &optional (status nil) (*tgizmo* *tgizmo*)
-		      &aux matches)
+                      &aux matches)
   (with-LTRE (tgizmo-ltre *tgizmo*)
-	     (setq matches (fetch form))
-	     (case status
-		   (:TRUE (remove-if-not #'true? matches))
-		   (:FALSE (remove-if-not #'false? matches))
-		   (:KNOWN (remove-if-not #'known? matches))
-		   (:UNKNOWN (remove-if-not #'unknown? matches))
-		   (t matches))))
+             (setq matches (fetch form))
+             (case status
+                   (:TRUE (remove-if-not #'true? matches))
+                   (:FALSE (remove-if-not #'false? matches))
+                   (:KNOWN (remove-if-not #'known? matches))
+                   (:UNKNOWN (remove-if-not #'unknown? matches))
+                   (t matches))))
 
 (defun tg-true? (form &optional (*tgizmo* *tgizmo*))
   (with-LTRE (tgizmo-ltre *tgizmo*)
-	     (true? form)))
+             (true? form)))
 
 (defun tg-false? (form &optional (*tgizmo* *tgizmo*))
   (with-LTRE (tgizmo-ltre *tgizmo*)
-	     (false? form)))
+             (false? form)))
 
 (defun tg-false-forms? (forms &optional (*tgizmo* *tgizmo*))
   (dolist (form forms T)
-	  (cond ((and (listp form) (eq (car form) :NOT))
-		 (unless (tg-true? (cadr form))
-			 (return-from tg-false-forms? nil)))
-		(t (unless (tg-false? (cadr form))
-			   (return-from tg-false-forms? nil))))))
+          (cond ((and (listp form) (eq (car form) :NOT))
+                 (unless (tg-true? (cadr form))
+                         (return-from tg-false-forms? nil)))
+                (t (unless (tg-false? (cadr form))
+                           (return-from tg-false-forms? nil))))))
 
 (defun tg-run-rules (&optional (*tgizmo* *tgizmo*))
   (with-LTRE (tgizmo-ltre *tgizmo*) (run-rules)))
@@ -124,28 +124,28 @@
 ;;;; Some fancy print routines
 
 (defun number-string (form)
-  (cond ((listp form) 
-	 (format nil "~A[~A(~A)]" (car form) (caadr form)
-		 (cadadr form)))
-	(t (format nil "~A" form))))
+  (cond ((listp form)
+         (format nil "~A[~A(~A)]" (car form) (caadr form)
+                 (cadadr form)))
+        (t (format nil "~A" form))))
 
 (defun Ds-string (form)
-  (cond ((listp form) 
-	 (format nil "Ds[~A(~A)]" (car form) (cadr form)))
-	(t (format nil "~A" form))))
+  (cond ((listp form)
+         (format nil "Ds[~A(~A)]" (car form) (cadr form)))
+        (t (format nil "~A" form))))
 
 (defun Ds-value-string (q rel)
   (format nil "~A=~A" (Ds-string q)
-	  (case rel
-		((:= =) 0)
-		((:> >) 1)
-		((:< <) -1)
-		((:<= <=) "{-1,0}")
-		((:>= >=) "{0,1}")
-		(:BT "irrelevant")
-		(:?? "{-1,0,1}"))))
+          (case rel
+                ((:= =) 0)
+                ((:> >) 1)
+                ((:< <) -1)
+                ((:<= <=) "{-1,0}")
+                ((:>= >=) "{0,1}")
+                (:BT "irrelevant")
+                (:?? "{-1,0,1}"))))
 
 (defun ineq-string (rel n1 n2)
   (format nil "~A ~A ~A"
-	  (number-string n1) rel
-	  (number-string n2)))
+          (number-string n1) rel
+          (number-string n2)))

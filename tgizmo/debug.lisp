@@ -1,4 +1,4 @@
-;; -*- Mode: Lisp; -*- 
+;; -*- Mode: Lisp; -*-
 
 ;;;; Utilities for debugging TGizmo
 ;;;; Last Edited: 1/29/93, by KDF
@@ -23,11 +23,11 @@
 (defvar *ex3* #+UNIX "/u/bps/code/tgizmo/ex3.lisp"
   #+MCL "Macintosh HD:BPS:tgizmo:ex3.lisp")
 
-(defvar *default-debugging* '(:PSVS-DDS :IR-DDS)) 
+(defvar *default-debugging* '(:PSVS-DDS :IR-DDS))
 
 (defun new (&optional (debugging t)
-		      (scenario-file *ex1*)
-		      (title "Test Gizmo"))
+                      (scenario-file *ex1*)
+                      (title "Test Gizmo"))
   (in-tgizmo (create-tgizmo title :DEBUGGING debugging))
   (in-ltre (tgizmo-ltre *tgizmo*))
   (load *set-rule-file*)
@@ -72,36 +72,33 @@
 (defvar *ex2-measurements* '((> (D ((amount-of water gas) can)) zero)))
 
 (defvar *ex3-measurements* '((> (A ((Amount-of water liquid) f)) zero)
-			     (> (A ((Amount-of water liquid) g)) zero)
-			     (> (A ((Amount-of water liquid) h)) zero)
-			     (< (D ((amount-of water liquid) g)) zero)))
+                             (> (A ((Amount-of water liquid) g)) zero)
+                             (> (A ((Amount-of water liquid) h)) zero)
+                             (< (D ((amount-of water liquid) g)) zero)))
 
 (defvar *ex3-extra-measurements* '((> (A ((Amount-of water liquid) f)) zero)
-			     (> (A ((Amount-of water liquid) g)) zero)
-			     (> (A ((Amount-of water liquid) h)) zero)
-			     (< (D ((amount-of water liquid) g)) zero)
-			     (< (D ((amount-of water liquid) f)) zero)))
+                             (> (A ((Amount-of water liquid) g)) zero)
+                             (> (A ((Amount-of water liquid) h)) zero)
+                             (< (D ((amount-of water liquid) g)) zero)
+                             (< (D ((amount-of water liquid) f)) zero)))
 
 (defun tgizmo-shakedown (&aux result)
   (test-ex1)
   (unless (= 8 (setq result (length (tgizmo-states *tgizmo*))))
-	  (error "Example 1 failed.  Should be 8 states, found ~D." result))
+          (error "Example 1 failed.  Should be 8 states, found ~D." result))
   (format t "~% Passed Example 1.")
   (test-ex2)
   (unless (=  13 (setq result (length (tgizmo-states *tgizmo*))))
-	  (error "Example 1 failed.  Should be 13 states, found ~D." result))
+          (error "Example 1 failed.  Should be 13 states, found ~D." result))
   (format t "~% Passed Example 2.")
   (mi *ex3* *ex3-measurements*
       :DEBUGGING nil :TITLE "Ex3, basic data")
   (unless (= 9 (setq result (length (tgizmo-states *tgizmo*))))
-	  (error "Example 3, basic measurements, failed.  Should be 9, was ~D." result)) 
+          (error "Example 3, basic measurements, failed.  Should be 9, was ~D." result))
   (format t "~% Passed Example 3 basic.")
   (mi *ex3* *ex3-extra-measurements*
-			 :DEBUGGING nil  :TITLE "Ex3 test -- More data")
+                         :DEBUGGING nil  :TITLE "Ex3 test -- More data")
   (unless (= 3 (setq result (length (tgizmo-states *tgizmo*))))
-	  (error "Example 3, extra measurements, failed.  Should be 3, was ~D." result))
+          (error "Example 3, extra measurements, failed.  Should be 3, was ~D." result))
   (format t "~% Passed Example 3 extra.")
   (format t "~% TGizmo seems okay.") t)
-
-
-
