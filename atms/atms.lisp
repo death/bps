@@ -10,7 +10,107 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/atms/atms
+  (:use #:cl)
+  (:export
+   #:atms
+   #:atms-p
+   #:atms-title
+   #:atms-node-counter
+   #:atms-just-counter
+   #:atms-env-counter
+   #:atms-nodes
+   #:atms-justs
+   #:atms-contradictions
+   #:atms-assumptions
+   #:atms-debugging
+   #:atms-nogood-table
+   #:atms-contra-node
+   #:atms-env-table
+   #:atms-empty-env
+   #:atms-node-string
+   #:atms-enqueue-procedure
+   #:tms-node
+   #:tms-node-p
+   #:tms-node-index
+   #:tms-node-datum
+   #:tms-node-label
+   #:tms-node-justs
+   #:tms-node-consequences
+   #:tms-node-contradictory?
+   #:tms-node-assumption?
+   #:tms-node-rules
+   #:tms-node-atms
+   #:just
+   #:just-p
+   #:just-index
+   #:just-informant
+   #:just-consequence
+   #:just-antecedents
+   #:env
+   #:env?
+   #:env-index
+   #:env-count
+   #:env-assumptions
+   #:env-nodes
+   #:env-nogood?
+   #:env-rules
+   #:node-string
+   #:debugging
+   #:default-node-string
+   #:ordered-insert
+   #:ordered-push
+   #:assumption-order
+   #:env-order
+   #:create-atms
+   #:change-atms
+   #:true-node?
+   #:in-node?
+   #:out-node?
+   #:node-consistent-with?
+   #:tms-create-node
+   #:assume-node
+   #:make-contradiction
+   #:justify-node
+   #:nogood-nodes
+   #:propagate
+   #:update
+   #:update-label
+   #:weave
+   #:in-antecedent?
+   #:weave?
+   #:supporting-antecedent?
+   #:remove-node
+   #:create-env
+   #:union-env
+   #:cons-env
+   #:find-or-make-env
+   #:insert-in-table
+   #:lookup-env
+   #:subset-env?
+   #:compare-env
+   #:new-nogood
+   #:set-env-contradictory
+   #:remove-env-from-labels
+   #:*solutions*
+   #:interpretations
+   #:get-depth-solutions1
+   #:extend-via-defaults
+   #:explain-node
+   #:why-node
+   #:why-nodes
+   #:node-justifications
+   #:print-justification
+   #:e
+   #:print-env
+   #:env-string
+   #:print-nogood
+   #:print-envs
+   #:print-env-table
+   #:print-atms-statistics
+   #:print-table))
+
+(in-package #:bps/atms/atms)
 
 ;;; Definitions.
 
@@ -79,10 +179,9 @@
 (defun node-string (node)
   (funcall (atms-node-string (tms-node-atms node)) node))
 
-(defmacro debugging (atms msg &optional node &rest args)
+(defmacro debugging (atms msg &rest args)
   `(when (atms-debugging ,atms)
-     (format *trace-output*
-             ,msg (if ,node (node-string ,node)) ,@args)))
+     (format *trace-output* ,msg ,@args)))
 
 (defun default-node-string (n) (format nil "~A" (tms-node-datum n)))
 
@@ -275,7 +374,9 @@
                    (return T)))))))
 
 (defun supporting-antecedent? (nodes env)
-  (dolist (node nodes t) (unless (in-node? node env) (return nil))))
+  (dolist (node nodes t)
+    (unless (in-node? node env)
+      (return nil))))
 
 
 (defun remove-node (node &aux atms)
@@ -407,6 +508,8 @@
 
 ;;; Interpretation construction
 
+(defvar *solutions* nil)
+
 (proclaim '(special *solutions*))
 
 (defun interpretations (atms choice-sets
@@ -471,7 +574,8 @@
 ;;; derivation. This is quite complicated because this is really a
 ;;; simple consequent JTMS.
 
-(defun explain-node (node env) (explain-node-1 env node nil nil))
+(defun explain-node (node env)
+  (explain-node-1 env node nil nil))
 
 (defun explain-node-1 (env node queued-nodes explanation)
   (cond ((member node queued-nodes) nil)
@@ -501,7 +605,8 @@
   (format stream "}>"))
 
 (defun why-nodes (atms &optional (stream t))
-  (dolist (n (reverse (atms-nodes atms))) (why-node n stream)))
+  (dolist (n (reverse (atms-nodes atms)))
+    (why-node n stream)))
 
 (defun node-justifications (node &optional (stream t))
   (format t "~% For ~A:" (node-string node))
@@ -529,7 +634,8 @@
   (setq assumptions (env-assumptions e))
   (when assumptions
     (setq printer (atms-node-string (tms-node-atms (car assumptions)))))
-  (dolist (a assumptions) (push (funcall printer a) strings))
+  (dolist (a assumptions)
+    (push (funcall printer a) strings))
   (format stream "{~{~A~^,~}}" (sort strings #'string-lessp)))
 
 ;;; Printing global data
