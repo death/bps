@@ -29,23 +29,15 @@
 
 (setq *planner-files*
       '("aplanr"  ;; Utilities
-	"plan-a"  ;; Antecedent planner
-	"plan-e"  ;; Envisioner
-	"bcode"   ;; Blocks World support
-	"blocks")) ;; Rules for Blocks World
+        "plan-a"  ;; Antecedent planner
+        "plan-e"  ;; Envisioner
+        "bcode"   ;; Blocks World support
+        "blocks")) ;; Rules for Blocks World
 
 (defun compile-planner () ;; Assumes ATRE is compiled and loaded.
   (compile-load-files '("aplanr" "plan-a" "plan-e" "bcode")
-		      *atre-path*)
+                      *atre-path*)
   (unless (and (boundp '*plnpr*)
-	       (not (null *plnpr*)))
-	  (create-planning-problem "DUMMY" nil))
+               (not (null *plnpr*)))
+          (create-planning-problem "DUMMY" nil))
   (compile-load-files '("blocks") *atre-path*))
-
-
-
-
-
-
-
-

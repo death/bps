@@ -1,4 +1,4 @@
-;; -*- Mode: Lisp; -*- 
+;; -*- Mode: Lisp; -*-
 
 ;;; Tests for ATRE
 ;; Last edited: 1/29/93, KDF
@@ -17,14 +17,14 @@
 
 (defun atre-test1 (&optional (debugging t))
   (setq *atre* (create-atre "Test ATRE"
-			    :DEBUGGING debugging))
+                            :DEBUGGING debugging))
   (run-forms '((rule :INTERN ((implies ?ante ?conse)
-			      :VAR ?f1 ?ante)
-		     (rassert! ?conse (:CE ?f1 ?ante)))
+                              :VAR ?f1 ?ante)
+                     (rassert! ?conse (:CE ?f1 ?ante)))
        (assume! '(implies (sentient-robot Robbie)
-			  (Human Robbie)) :no-bias)
+                          (Human Robbie)) :no-bias)
        (assume! '(implies (human Robbie)
-			  (mortal Robbie)) :sigh)
+                          (mortal Robbie)) :sigh)
        (assume! '(sentient-robot Robbie) :sort-of))))
 #| When run on HAL-9000, it looks like this:
 > (atre-test1)
@@ -40,7 +40,7 @@
     Asserting (HUMAN ROBBIE) via (CE (IMPLIES
      (SENTIENT-ROBOT ROBBIE) (HUMAN ROBBIE)) (SENTIENT-ROBOT
       ROBBIE)).
-    Asserting (MORTAL ROBBIE) via (CE (IMPLIES (HUMAN 
+    Asserting (MORTAL ROBBIE) via (CE (IMPLIES (HUMAN
      ROBBIE) (MORTAL ROBBIE)) (HUMAN ROBBIE)).
     2 rules run.
 NIL
@@ -58,14 +58,14 @@ FALSE: NIL
 
 (defun atre-test2 (&optional (debugging t))
   (setq *atre* (create-atre "Test ATRE"
-			    :DEBUGGING debugging))
+                            :DEBUGGING debugging))
   (run-forms '((rule :INTERN ((implies ?ante ?conse)
-			      :VAR ?f1 ?ante)
-		     (rassert! ?conse (CE ?f1 ?ante)))
+                              :VAR ?f1 ?ante)
+                     (rassert! ?conse (CE ?f1 ?ante)))
        (assert! '(implies (sentient-robot Robbie)
-			  (Human Robbie)) 'no-bias)
+                          (Human Robbie)) 'no-bias)
        (assert! '(implies (human Robbie)
-			  (mortal Robbie)) 'sigh)
+                          (mortal Robbie)) 'sigh)
        (assume! '(sentient-robot Robbie) 'sort-of))))
 
 #| When run on HAL-9000 it looks like this:
@@ -100,15 +100,15 @@ FALSE: NIL
 
 (defun atre-test3 (&optional (debugging t))
   (setq *atre* (create-atre "Test ATRE"
-			    :DEBUGGING debugging))
+                            :DEBUGGING debugging))
   (run-forms
-	     '((rule :IN ((implies ?ante ?conse)
-			  :VAR ?f1 ?ante)
-		     (rassert! ?conse (:CE ?f1 ?ante)))
+             '((rule :IN ((implies ?ante ?conse)
+                          :VAR ?f1 ?ante)
+                     (rassert! ?conse (:CE ?f1 ?ante)))
        (assert! '(implies (sentient-robot Robbie)
-			  (Human Robbie)) :no-bias)
+                          (Human Robbie)) :no-bias)
        (assert! '(implies (human Robbie)
-			  (mortal Robbie)) :sigh)
+                          (mortal Robbie)) :sigh)
        (assume! '(sentient-robot Robbie) :sort-of))))
 #|
 > (atre-test3)
@@ -142,20 +142,20 @@ FALSE: NIL
 
 (defun atre-test4 (&optional (debugging t))
   (setq *atre* (create-atre "Test ATRE"
-			    :DEBUGGING debugging))
+                            :DEBUGGING debugging))
   (run-forms
-	     '((rule :IMPLIED-BY  ((implies ?ante ?conse)
-				   :VAR ?f1 ?ante)
-		     (rassert! ?conse (:CE ?f1 ?ante)))
+             '((rule :IMPLIED-BY  ((implies ?ante ?conse)
+                                   :VAR ?f1 ?ante)
+                     (rassert! ?conse (:CE ?f1 ?ante)))
        (assume! '(implies (sentient-robot Robbie)
-			  (Human Robbie)) :no-bias)
+                          (Human Robbie)) :no-bias)
        (assert! '(implies (human Robbie)
-			  (mortal Robbie)) :sigh)
+                          (mortal Robbie)) :sigh)
        (assume! '(sentient-robot Robbie) :sort-of)))
   (show-data *atre*)
   (print-envs (atre-atms *atre*)))
 
-#| When run on HAL-9000, result looks like this: 
+#| When run on HAL-9000, result looks like this:
 > (atre-test4)
 
     0 rules run.
@@ -179,10 +179,10 @@ NIL
 |#
 
 (defun atre-test4a ()
-  (change-focus 
-	(environment-of
-	 '((implies (sentient-robot Robbie) (Human Robbie))
-	   (sentient-robot Robbie))))
+  (change-focus
+        (environment-of
+         '((implies (sentient-robot Robbie) (Human Robbie))
+           (sentient-robot Robbie))))
   (run-rules)
   (show-data)
   (print-envs (atre-atms *atre*)))
@@ -214,25 +214,25 @@ NIL
 ;;;; Test of contradiction rules
 (defun atre-test5 (&optional (debugging t))
   (setq *atre* (create-atre "Test ATRE"
-			    :DEBUGGING debugging))
+                            :DEBUGGING debugging))
   (run-forms '((rule :INTERN ((implies ?ante ?conse)
-			      :VAR ?f1 ?ante)
-		     (rassert! ?conse (:CE ?f1 ?ante)))
+                              :VAR ?f1 ?ante)
+                     (rassert! ?conse (:CE ?f1 ?ante)))
        (assume! '(sentient Robbie) :sort-of)
-       (assume! '(immortal Robbie) :why-not) 	       
+       (assume! '(immortal Robbie) :why-not)
        (rule :INTERN ((mortal ?x) :VAR ?f1
-		      (immortal ?x) :VAR ?f2)
-	(rnogood! :DEFINITION ?f1 ?f2))
+                      (immortal ?x) :VAR ?f2)
+        (rnogood! :DEFINITION ?f1 ?f2))
        (contradiction-rule
-	(environment-of '((sentient Robbie)
-			  (immortal Robbie)))
-	#'(lambda (env)
-	    (format T "~% Poor Robbie!  --> ~A." env))
-	*atre*)
+        (environment-of '((sentient Robbie)
+                          (immortal Robbie)))
+        #'(lambda (env)
+            (format T "~% Poor Robbie!  --> ~A." env))
+        *atre*)
        (assert! '(implies (sentient Robbie)
-			  (Human Robbie)) :no-bias)
+                          (Human Robbie)) :no-bias)
        (assert! '(implies (human Robbie)
-			  (mortal Robbie)) :sigh))))
+                          (mortal Robbie)) :sigh))))
 #| When run on Hal-9000, it looks like this:
 > (atre-test5)
 
@@ -262,5 +262,3 @@ NIL
 E-4:* {(IMMORTAL ROBBIE),(SENTIENT ROBBIE)}
 NIL
 |#
-
-

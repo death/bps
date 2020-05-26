@@ -1,6 +1,6 @@
-;; -*- Mode: Lisp; -*- 
+;; -*- Mode: Lisp; -*-
 
-;;;; ATRE definitions and interface 
+;;;; ATRE definitions and interface
 ;; Last edited: 1/29/93, KDF
 
 ;;; Copyright (c) 1990-1993, Kenneth D. Forbus, Northwestern University,
@@ -14,7 +14,7 @@
 (in-package :COMMON-LISP-USER)
 
 (defstruct (atre (:PREDICATE atre?)
-		 (:PRINT-FUNCTION print-atre))
+                 (:PRINT-FUNCTION print-atre))
   title                   ; Pretty name
   atms                    ; Pointer to its ATMS
   (dbclasses nil)           ; List of dbclasses
@@ -69,9 +69,9 @@
   (format st "<Datum ~D>" (datum-counter d)))
 
 (defstruct (rule (:PRINT-FUNCTION (lambda (r st ignore)
-				    (declare (ignore ignore))
-				    (format st "<Rule ~D>"
-					    (rule-counter r)))))
+                                    (declare (ignore ignore))
+                                    (format st "<Rule ~D>"
+                                            (rule-counter r)))))
   counter      ; Unique ID for easy lookup
   atre         ; The ATRE it is part of
   dbclass        ; Dbclass of associated pattern
@@ -79,25 +79,25 @@
   body         ; Procedure that does the rules' work
   in-nodes     ; Must have a jointly non-empty label
   imp-nodes)   ; Must be implied by the focus
-  
+
 ;;; Setting up ATRE
 
 (defun create-atre (title &key debugging)
  (let ((j (make-atre
-	   :TITLE title 
-	   :ATMS (create-atms (list :ATMS-OF title) 
-			      :NODE-STRING 'stringify-node)
-	   :DBCLASS-TABLE (make-hash-table :TEST #'eq)
-	   :DEBUGGING debugging))
+           :TITLE title
+           :ATMS (create-atms (list :ATMS-OF title)
+                              :NODE-STRING 'stringify-node)
+           :DBCLASS-TABLE (make-hash-table :TEST #'eq)
+           :DEBUGGING debugging))
        (false nil))
    (in-atre j)
    (change-atms (atre-atms j)
-		:ENQUEUE-PROCEDURE
-		#'(lambda (pair) (enqueue pair j)))
+                :ENQUEUE-PROCEDURE
+                #'(lambda (pair) (enqueue pair j)))
    ;; Create a default contradiction
    (setq false (make-datum :COUNTER (incf (atre-datum-counter j))
-			   :ATRE j :LISP-FORM 'FALSE
-			   :DBCLASS (get-dbclass 'FALSE)))
+                           :ATRE j :LISP-FORM 'FALSE
+                           :DBCLASS (get-dbclass 'FALSE)))
    (setf (datum-tms-node false) (atms-contra-node (atre-atms j)))
    (setf (tms-node-datum (datum-tms-node false)) false)
    (push false (dbclass-facts (datum-dbclass false)))
@@ -123,24 +123,24 @@
 
 (defun show (&optional (atre *ATRE*) (stream *standard-output*))
   (format stream "For ATRE ~A:~% Focus = ~A."
-	  (atre-title atre)
-	  (if (env? (atre-focus atre)) (atre-focus atre)
-	    "empty"))
+          (atre-title atre)
+          (if (env? (atre-focus atre)) (atre-focus atre)
+            "empty"))
   (show-data atre stream) (show-rules atre stream))
 
 (defun solutions (atre choice-sets)
   (interpretations
    (atre-atms atre)
    (mapcar #'(lambda (choice-set)
-	       (mapcar #'(lambda (f) (get-tms-node f atre))
-		       choice-set))
-	   choice-sets)))
+               (mapcar #'(lambda (f) (get-tms-node f atre))
+                       choice-set))
+           choice-sets)))
 
 ;;;; Implied-by rules
 
 ;; The rule expansion code sets up the necessary tests for
 ;; seeing if the antecedent nodes are implied by the current
-;; focus when the rule is on the queue.  Here we just 
+;; focus when the rule is on the queue.  Here we just
 ;; re-queue the implied-by rules which were not in the scope
 ;; of the previous focus for re-examination.
 
@@ -148,10 +148,10 @@
   (unless (atre? atre) ;; Users do slip, sometimes
     (error "Must change the focus of some ATRE, not ~A." atre))
   (when (and (env? env)
-	     (not (env-nogood? env)))
+             (not (env-nogood? env)))
     (setf (atre-focus atre) env) ;; change focus
     (setf (atre-queue atre) ;; re-queue implied-by rules
-	  (nconc (atre-queue atre) (atre-imp-rules atre)))
+          (nconc (atre-queue atre) (atre-imp-rules atre)))
     (setf (atre-imp-rules atre) nil)
     env)) ;; return new focus to indicate switch
 
@@ -162,12 +162,12 @@
 (defmacro with-focus (focus atre &rest forms)
   `(let ((old-focus (atre-focus ,atre)))
      (unwind-protect (progn (change-focus ,focus ,atre)
-			    ,@ forms)
+                            ,@ forms)
        (change-focus old-focus ,atre))))
 
 ;; Interface to contradiction rules in ATMS
 
 (defun contradiction-rule (env proc atre)
   (cond ((env-nogood? env)
-	 (enqueue (list proc (list env) nil) atre))
-	(t (push (list proc (list env) nil) (env-rules env)))))
+         (enqueue (list proc (list env) nil) atre))
+        (t (push (list proc (list env) nil) (env-rules env)))))
