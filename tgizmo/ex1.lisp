@@ -1,4 +1,4 @@
-;; -*- Mode: Lisp; -*- 
+;; -*- Mode: Lisp; -*-
 
 ;;;; Two containers scenario
 ;; Last edited 1/29/93, by KDF
@@ -11,8 +11,6 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
-
 (rassert! (phase liquid))
 (rassert! (substance water))
 
@@ -24,6 +22,3 @@
 ;; Specify their connectivity
 (rassert! (fluid-connection P1 F G))
 (rassert! (fluid-connection P1 G F))
-
-
-

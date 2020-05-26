@@ -11,17 +11,19 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/tgizmo/debug
+  (:use #:cl
+        #:bps/ltms/all
+        #:bps/tgizmo/all)
+  (:export))
 
-(defvar *tgizmo-domain-file* #+UNIX  "/u/bps/code/tgizmo/tnst.lisp"
-  #+MCL "Macintosh HD:BPS:tgizmo:tnst.fasl")
+(in-package #:bps/tgizmo/debug)
 
-(defvar *ex1* #+UNIX "/u/bps/code/tgizmo/ex1.lisp"
-  #+MCL "Macintosh HD:BPS:tgizmo:ex1.lisp")
-(defvar *ex2* #+UNIX "/u/bps/code/tgizmo/ex2.lisp"
-  #+MCL "Macintosh HD:BPS:tgizmo:ex2.lisp")
-(defvar *ex3* #+UNIX "/u/bps/code/tgizmo/ex3.lisp"
-  #+MCL "Macintosh HD:BPS:tgizmo:ex3.lisp")
+(defvar *tgizmo-domain-file* "tnst")
+
+(defvar *ex1* "ex1")
+(defvar *ex2* "ex2")
+(defvar *ex3* "ex3")
 
 (defvar *default-debugging* '(:PSVS-DDS :IR-DDS))
 
@@ -30,14 +32,17 @@
                       (title "Test Gizmo"))
   (in-tgizmo (create-tgizmo title :DEBUGGING debugging))
   (in-ltre (tgizmo-ltre *tgizmo*))
-  (load *set-rule-file*)
-  (with-ltre *ltre* (load *tgizmo-laws-file*))
+  ;; (change-ltre *ltre* :debugging t)
+  (load "../ltms/setrule")
+  (with-ltre *ltre* (load "laws"))
   (with-ltre *ltre* (load *tgizmo-domain-file*))
   (load-scenario scenario-file)
   *tgizmo*)
 
 (defun test-ex1 ()
-  (new nil *ex1*)(tg-run-rules)(find-states))
+  (new nil *ex1*)
+  (tg-run-rules)
+  (find-states))
 
 (defun test-ex1-2 ()
   (new nil *ex1*)
@@ -69,18 +74,21 @@
 
 ;;;; Measurement Interpretation examples
 
-(defvar *ex2-measurements* '((> (D ((amount-of water gas) can)) zero)))
+(defvar *ex2-measurements*
+  '((> (D ((amount-of water gas) can)) zero)))
 
-(defvar *ex3-measurements* '((> (A ((Amount-of water liquid) f)) zero)
-                             (> (A ((Amount-of water liquid) g)) zero)
-                             (> (A ((Amount-of water liquid) h)) zero)
-                             (< (D ((amount-of water liquid) g)) zero)))
+(defvar *ex3-measurements*
+  '((> (A ((Amount-of water liquid) f)) zero)
+    (> (A ((Amount-of water liquid) g)) zero)
+    (> (A ((Amount-of water liquid) h)) zero)
+    (< (D ((amount-of water liquid) g)) zero)))
 
-(defvar *ex3-extra-measurements* '((> (A ((Amount-of water liquid) f)) zero)
-                             (> (A ((Amount-of water liquid) g)) zero)
-                             (> (A ((Amount-of water liquid) h)) zero)
-                             (< (D ((amount-of water liquid) g)) zero)
-                             (< (D ((amount-of water liquid) f)) zero)))
+(defvar *ex3-extra-measurements*
+  '((> (A ((Amount-of water liquid) f)) zero)
+    (> (A ((Amount-of water liquid) g)) zero)
+    (> (A ((Amount-of water liquid) h)) zero)
+    (< (D ((amount-of water liquid) g)) zero)
+    (< (D ((amount-of water liquid) f)) zero)))
 
 (defun tgizmo-shakedown (&aux result)
   (test-ex1)

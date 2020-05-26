@@ -11,8 +11,6 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
-
 ;;; Three blobs example
 
 (assertq (physob F))
@@ -26,5 +24,3 @@
 (assertq (heat-connection P1 G F))
 (assertq (heat-connection P2 G H))
 (assertq (heat-connection P2 H G))
-
-

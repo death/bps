@@ -11,8 +11,6 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package  :COMMON-LISP-USER)
-
 (assertq (physob F))
 (assertq (physob G))
 (assertq (physob H))
@@ -28,5 +26,3 @@
 (assertq (heat-connection P2 H G))
 (assertq (heat-connection P3 G I))
 (assertq (heat-connection P3 I G))
-
-

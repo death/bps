@@ -11,7 +11,8 @@
                                  #:bps/tre
                                  #:bps/ftre
                                  #:bps/jtms
-                                 #:bps/ltms))
+                                 #:bps/ltms
+                                 #:bps/tgizmo))
 
 (asdf:defsystem #:bps
   :description "Code from Building Problem Solvers"
@@ -21,4 +22,5 @@
                "bps/tre/all"
                "bps/ftre/all"
                "bps/jtms/all"
-               "bps/ltms/all"))
+               "bps/ltms/all"
+               "bps/tgizmo/all"))

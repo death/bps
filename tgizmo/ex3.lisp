@@ -11,8 +11,6 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
-
 (rassert! (phase liquid))
 (rassert! (substance water))
 
@@ -30,5 +28,3 @@
 (rassert! (fluid-connection P1 G F))
 (rassert! (fluid-connection P2 G H))
 (rassert! (fluid-connection P2 H G))
-
-

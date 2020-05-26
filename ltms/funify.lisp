@@ -47,8 +47,9 @@
                                (eq (car (cadr let-clause))
                                    :EVAL))
                           (cadr (cadr let-clause))
-                        (quotize (cadr let-clause)))))
-                            var-specs)
+                          (quotize (cadr let-clause)))))
+            var-specs)
+       (declare (ignorable ,@(mapcar #'car var-specs)))
        ,@ (fully-expand-body body))))
 
 ;;; Finding free variables in a pattern

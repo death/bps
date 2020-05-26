@@ -18,7 +18,10 @@
         #:bps/ltms/linter
         #:bps/ltms/ldata
         #:bps/ltms/lrules)
-  (:export))
+  (:export
+   #:*debug-dds*
+   #:debug-dds
+   #:dd-search))
 
 (in-package #:bps/ltms/dds)
 
@@ -36,43 +39,44 @@
   (setq choices (car choice-sets))
   (dolist (choice choices)
     (debug-dds "~%    DDS: Considering ~A..." choice)
-    (cond ((false? choice) ;skip if known loser
+    (cond ((false? choice)              ;skip if known loser
            (debug-dds "~%    DDS: ~A already known nogood." choice))
-          ((true? choice) ;continue if known
+          ((true? choice)               ;continue if known
            (debug-dds "~%    DDS: ~A true by implication." choice)
            (DD-Search (cdr choice-sets) end)
            (return nil))
           (t (debug-dds "~%    DDS: Assuming ~A." choice)
              (with-Contradiction-Handler (ltre-ltms *ltre*)
-              #'(lambda (clauses ltms &aux asns)
-                   (debug-dds "~%    DDS: Entering handler for ~A with ~A~A."
-                    choice clauses
-                    (mapcar #'(lambda (c) (violated-clause? c))
-                       clauses))
-                   (dolist (cl clauses)
-                      (setq asns (assumptions-of-clause cl))
-                      (debug-dds "~%    DDS: Assumptions are: ~A"
-                       (mapcar #'view-node asns))
-                      (dolist (asn asns)
+                 #'(lambda (clauses ltms &aux asns)
+                     (declare (ignore ltms))
+                     (debug-dds "~%    DDS: Entering handler for ~A with ~A~A."
+                                choice clauses
+                                (mapcar #'(lambda (c) (violated-clause? c))
+                                        clauses))
+                     (dolist (cl clauses)
+                       (setq asns (assumptions-of-clause cl))
+                       (debug-dds "~%    DDS: Assumptions are: ~A"
+                                  (mapcar #'view-node asns))
+                       (dolist (asn asns)
                          (when (or (equal choice (view-node asn))
                                    (and (listp choice) (eq (car choice) :NOT)
                                         (equal (cadr choice) (view-node asn))))
-                            (throw marker
-                               (cons :LOSERS ;; Assign labels before any retraction
-                                  ;; Failure to do so can result in incorrect nogoods.
-                                  (mapcar #'signed-view-node
-                                     (delete asn asns))))))))
-              (setq answer (catch marker
+                           (throw marker
+                             (cons :LOSERS ;; Assign labels before any retraction
+                                   ;; Failure to do so can result in incorrect nogoods.
+                                   (mapcar #'signed-view-node
+                                           (delete asn asns))))))))
+               (setq answer (catch marker
                               (Assuming (list choice) *ltre*
-                               (run-rules *ltre*)
-                               (DD-Search (cdr choice-sets) end))))
-              (when (and (listp answer)
-                         (eq (car answer) :LOSERS))
+                                (run-rules *ltre*)
+                                (DD-Search (cdr choice-sets) end))))
+               (when (and (listp answer)
+                          (eq (car answer) :LOSERS))
                  (debug-dds "~%    DDS: ~A inconsistent with ~A."
-                  choice (mapcar #'view-node (cdr answer)))
+                            choice (mapcar #'view-node (cdr answer)))
                  (assert! `(:NOT (:AND ,choice
-                                  ,@ (cdr answer)))
-                  :DD-SEARCH-NOGOOD)))))))
+                                       ,@ (cdr answer)))
+                          :DD-SEARCH-NOGOOD)))))))
 
 ;;;; A familiar example
 

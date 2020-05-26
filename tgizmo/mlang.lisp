@@ -11,7 +11,27 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/tgizmo/mlang
+  (:use #:cl #:bps/tgizmo/defs #:bps/ltms/all)
+  (:export
+   #:defrule
+   #:defpredicate
+   #:defentity
+   #:defview
+   #:defprocess
+   #:?self
+   #:exists
+   #:only-during
+   #:quantity
+   #:i+
+   #:i-
+   #:qprop
+   #:qprop-
+   #:process-instance
+   #:view-instance
+   #:active))
+
+(in-package #:bps/tgizmo/mlang)
 
 (defun keywordize (stuff)
   (cond ((null stuff) (error "Can't keywordize nothing."))
@@ -41,17 +61,17 @@
 
 (defmacro defview (form &rest stuff)
   (multiple-value-bind (ispec pcs qcs rels infs)
-                       (parse-vp form stuff nil)
-                       (debugging-tgizmo :DOMAIN-THEORY
-                                         "~% Defining view ~A.." form)
-                       (make-vp-rules form ispec pcs qcs rels infs nil)))
+      (parse-vp form stuff nil)
+    (debugging-tgizmo :DOMAIN-THEORY
+                      "~% Defining view ~A.." form)
+    (make-vp-rules form ispec pcs qcs rels infs nil)))
 
 (defmacro defprocess (form &rest stuff)
   (multiple-value-bind (ispec pcs qcs rels infs)
-                       (parse-vp form stuff t)
-                       (debugging-tgizmo :DOMAIN-THEORY
-                                         "~% Defining process ~A.." form)
-                       (make-vp-rules form ispec pcs qcs rels infs t)))
+      (parse-vp form stuff t)
+    (debugging-tgizmo :DOMAIN-THEORY
+                      "~% Defining process ~A.." form)
+    (make-vp-rules form ispec pcs qcs rels infs t)))
 
 ;;;; Working with views and processes
 

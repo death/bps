@@ -11,11 +11,51 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/tgizmo/ineqs
+  (:use #:cl
+        #:bps/tgizmo/defs
+        #:bps/tgizmo/mlang
+        #:bps/tgizmo/psvs
+        #:bps/ltms/all)
+  (:export
+   #:num-order
+   #:individual-of
+   #:quantity-of
+   #:install-comparison-constraints-if-needed
+   #:install-comparison-constraints
+   #:update-ineqs-as-needed
+   #:greater-than?
+   #:less-than?
+   #:equal-to?
+   #:rel-value
+   #:rel-value-clause
+   #:comparison?
+   #:greater-than!
+   #:less-than!
+   #:equal-to!
+   #:lt-forms
+   #:eq-forms
+   #:gt-forms
+   #:lte-forms
+   #:gte-forms
+   #:use-transitivity
+   #:find-comparison-cycles-for
+   #:make-comp-cycle
+   #:find-comparison-set
+   #:check-comp-cycle
+   #:find-cycle-support
+   #:signed-form
+   #:show-comp-cycles
+   #:show-ineqs
+   #:a
+   #:d))
+
+(in-package #:bps/tgizmo/ineqs)
 
 (proclaim '(special *tgizmo*))
 
-(defun num-order (n1 n2) (string< (format nil "~A" n1) (format nil "~A" n2)))
+(defun num-order (n1 n2)
+  (string< (format nil "~A" n1) (format nil "~A" n2)))
 
 (defun individual-of (q-or-n) ;; Presumes single owner
     (cond ((not (listp q-or-n)) nil)
@@ -35,18 +75,18 @@
   (when (equal n1 n2) (error "Can't do self-comparisons: ~A." n1))
   (if (num-order n2 n1) (psetq n1 n2 n2 n1))
   (unless (member (cons n1 n2) (tgizmo-comparisons *tgizmo*) :TEST #'equal)
-          (install-comparison-constraints n1 n2)
-          ;; Preprocess connectivity for transitivity inferences
-          (setq cycles (find-comparison-cycles-for n1 n2))
-          (when cycles
-                (debugging-tgizmo :COMP
-                                  "~%  ..Found new comparison cycles:~%~A" cycles)
-                (setf (tgizmo-update-ineqs? *tgizmo*) t)
-                (setf (tgizmo-comp-cycles *tgizmo*)
-                      (nconc cycles
-                             (tgizmo-comp-cycles *tgizmo*))))
-          ;; Finaly, record the comparison as potentially interesting.
-          (push (cons n1 n2) (tgizmo-comparisons *tgizmo*))))
+    (install-comparison-constraints n1 n2)
+    ;; Preprocess connectivity for transitivity inferences
+    (setq cycles (find-comparison-cycles-for n1 n2))
+    (when cycles
+      (debugging-tgizmo :COMP
+                        "~%  ..Found new comparison cycles:~%~A" cycles)
+      (setf (tgizmo-update-ineqs? *tgizmo*) t)
+      (setf (tgizmo-comp-cycles *tgizmo*)
+            (nconc cycles
+                   (tgizmo-comp-cycles *tgizmo*))))
+    ;; Finaly, record the comparison as potentially interesting.
+    (push (cons n1 n2) (tgizmo-comparisons *tgizmo*))))
 
 ;;;; Internal consistency and updating for comparisons
 
@@ -167,13 +207,12 @@
               (check-comp-cycle cycle))
       (tg-run-rules)))
 
-(defun find-comparison-cycles-for (n1 n2 &aux start)
+(defun find-comparison-cycles-for (n1 n2)
   ;; Queue entries need to be (<n3> <n1>)
   (do ((queue (mapcar #'(lambda (n) (list n n1))
                       (find-comparison-set n1 n2))
               (nconc (cdr queue) new-entries))
        (new-entries nil nil)
-       (candidates nil)
        (cycles nil))
       ((null queue) (mapcar #'make-comp-cycle cycles))
       (cond ((equal (caar queue) n2) ;; Got one
@@ -306,13 +345,15 @@
 
 ;;; Test cases
 
-(setq *ineq-test1* '((> (A (T i1)) (A (T i2)))
-                       (= (A (T i2)) (A (T i3)))
-                       (> (A (T i3)) (A (T i4)))
-                       (< (A (T i4)) (A (T i1)))
-                       (> (A (T i3)) (A (T i1))))) ;; Should be 3 cycles
+(defvar *ineq-test1*
+  '((> (A (T i1)) (A (T i2)))
+    (= (A (T i2)) (A (T i3)))
+    (> (A (T i3)) (A (T i4)))
+    (< (A (T i4)) (A (T i1)))
+    (> (A (T i3)) (A (T i1))))) ;; Should be 3 cycles
 
-(setq *ineq-test2* '((> (A (T fred)) (A (T george)))
-                     (> (A (T george)) (A (T mable)))
-                     (= (A (T mable)) (A (T anabelle)))
-                     (> (A (T anabelle)) (A (T pat)))))
+(defvar *ineq-test2*
+  '((> (A (T fred)) (A (T george)))
+    (> (A (T george)) (A (T mable)))
+    (= (A (T mable)) (A (T anabelle)))
+    (> (A (T anabelle)) (A (T pat)))))

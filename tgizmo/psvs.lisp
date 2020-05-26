@@ -11,14 +11,28 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/tgizmo/psvs
+  (:use #:cl
+        #:bps/tgizmo/defs
+        #:bps/tgizmo/mlang
+        #:bps/ltms/all)
+  (:export
+   #:load-scenario
+   #:gather-vps
+   #:psvs-choice-sets
+   #:search-psvs
+   #:show-psvs
+   #:use-transitivity
+   #:retract-ir-cwas))
+
+(in-package #:bps/tgizmo/psvs)
 
 (defun load-scenario (sfile &optional (*tgizmo* *tgizmo*))
   (with-tgizmo *tgizmo*
-               (with-ltre (tgizmo-ltre *tgizmo*)
-                          (load sfile))
-               (tg-run-rules)
-               (use-transitivity *tgizmo*)))
+    (with-ltre (tgizmo-ltre *tgizmo*)
+      (load sfile))
+    (tg-run-rules)
+    (use-transitivity *tgizmo*)))
 
 (defun gather-vps (&optional (*tgizmo* *tgizmo*))
   (tg-fetch `(Active ?x)))
@@ -39,11 +53,11 @@
                 (retract-IR-CWAs))))
 
 (defun show-psvs (&optional (*tgizmo* *tgizmo*))
-;;; good for examining the current state
+  ;; good for examining the current state
   (dolist (active-s (tg-fetch '(Active ?x)))
-          (format t "~% ~A is ~A."
-                  (cadr active-s)
-                  (case (label-of active-s)
-                        (:TRUE "active")
-                        (:FALSE "inactive")
-                        (t "??")))))
+    (format t "~% ~A is ~A."
+            (cadr active-s)
+            (case (label-of active-s)
+              (:TRUE "active")
+              (:FALSE "inactive")
+              (t "??")))))

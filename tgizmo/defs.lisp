@@ -11,7 +11,52 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/tgizmo/defs
+  (:use #:cl #:bps/ltms/all)
+  (:export
+   #:tgizmo
+   #:tgizmo-p
+   #:tgizmo-title
+   #:tgizmo-measurements
+   #:tgizmo-scenario
+   #:tgizmo-ltre
+   #:tgizmo-debugging
+   #:tgizmo-quantities
+   #:tgizmo-comparisons
+   #:tgizmo-comp-cycles
+   #:tgizmo-influence-order
+   #:tgizmo-update-ineqs?
+   #:tgizmo-nstates
+   #:tgizmo-states
+   #:create-tgizmo
+   #:*tgizmo*
+   #:debugging-tgizmo
+   #:when-debugging-tgizmo
+   #:change-tgizmo
+   #:in-tgizmo
+   #:with-tgizmo
+   #:state
+   #:state-p
+   #:make-state
+   #:state-title
+   #:state-individuals
+   #:state-view-structure
+   #:state-process-structure
+   #:state-comparisons
+   #:state-ds-values
+   #:tg-fetch
+   #:tg-true?
+   #:tg-false?
+   #:tg-false-forms?
+   #:tg-run-rules
+   #:same-elements?
+   #:number-string
+   #:ds-string
+   #:ds-value-string
+   #:ineq-string
+   #:ir-cwa-contradiction-handler))
+
+(in-package #:bps/tgizmo/defs)
 
 (defstruct (tgizmo (:PRINT-FUNCTION tgizmo-printer))
   (title "")
@@ -50,12 +95,14 @@
 (defvar *tgizmo* nil) ;; Default tgizmo
 
 (defmacro debugging-tgizmo (key msg &rest args)
-  `(when (member ,key (tgizmo-debugging *tgizmo*))
-         (format t ,msg ,@ args)))
+  `(when (or (eq 't (tgizmo-debugging *tgizmo*))
+             (member ,key (tgizmo-debugging *tgizmo*)))
+     (format t ,msg ,@ args)))
 
 (defmacro when-debugging-tgizmo (key &rest code)
-  `(when (member ,key (tgizmo-debugging *tgizmo*))
-         ,@ code))
+  `(when (or (eq 't (tgizmo-debugging *tgizmo*))
+             (member ,key (tgizmo-debugging *tgizmo*)))
+     ,@ code))
 
 (defun change-tgizmo (tg &key (debugging :NADA))
   (unless (eq debugging :NADA) (setf (tgizmo-debugging tg) debugging)))

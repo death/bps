@@ -14,8 +14,6 @@
 ;;; This file implements a subset of QP theory, using
 ;;; the LTMS to directly encode axiomatic statements.
 
-(in-package :COMMON-LISP-USER)
-
 (rule ((:INTERN (Quantity (?qtype ?individual)) :VAR ?qdecl))
       ;; Greatly restricted
       (rassert! (:IMPLIES ?qdecl (Exists ?individual))

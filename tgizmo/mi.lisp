@@ -11,38 +11,47 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/tgizmo/mi
+  (:use #:cl
+        #:bps/ltms/all
+        #:bps/tgizmo/defs
+        #:bps/tgizmo/mlang
+        #:bps/tgizmo/psvs
+        #:bps/tgizmo/ineqs
+        #:bps/tgizmo/resolve
+        #:bps/tgizmo/states)
+  (:export
+   #:*domain-file*
+   #:mi
+   #:find-states
+   #:resolve-completely
+   #:debug-find-states))
 
-(defvar *tgizmo-laws-file*
-  #+ILS  "/u/bps/code/tgizmo/laws"
-  #+PARC "virgo:/virgo/dekleer/bps/code/tgizmo/laws"
-  #+MCL "Macintosh HD:BPS:tgizmo:laws.fasl")
+(in-package #:bps/tgizmo/mi)
 
-(defvar *domain-file* #+UNIX "/u/bps/code/tgizmo/tnst.lisp"
-  #+PARC "virgo:/virgo/dekleer/bps/code/tgizmo/tnst"
-  #+MCL "Macintosh HD:BPS:tgizmo:tnst.fasl")
+(defvar *domain-file* "tnst")
 
 (defun mi (scenario measurements
-                    &key (debugging nil)
-                    (debugging-dds nil)
-                    (title nil)
-                    (domain *domain-file*))
+           &key (debugging nil)
+                (debugging-dds nil)
+                (title nil)
+                (domain *domain-file*))
   (with-tgizmo
-   (setq *tgizmo*
-   (create-tgizmo
-    (if title title (format nil "MI of ~A" scenario))
-    :DEBUGGING debugging :SCENARIO scenario
-    :MEASUREMENTS measurements))
-   (with-LTRE (tgizmo-ltre *tgizmo*)
-    (load *set-rule-file*)
-    (setq *debug-dds* debugging-dds)
-    (load *tgizmo-laws-file*)
-    (load domain)
-    (load-scenario scenario)
-    (dolist (d measurements)
-            (assume! d :MEASURED))
-    (find-states *tgizmo*))
-   (values *tgizmo* (length (tgizmo-states *tgizmo*)))))
+      (setq *tgizmo*
+            (create-tgizmo
+             (if title title (format nil "MI of ~A" scenario))
+             :DEBUGGING debugging :SCENARIO scenario
+             :MEASUREMENTS measurements))
+    (with-LTRE (tgizmo-ltre *tgizmo*)
+      (load "../ltms/setrule")
+      (setq *debug-dds* debugging-dds)
+      (load "laws")
+      (load domain)
+      (load-scenario scenario)
+      (dolist (d measurements)
+        (assume! d :MEASURED))
+      (find-states *tgizmo*))
+    (values *tgizmo* (length (tgizmo-states *tgizmo*)))))
 
 (defun find-states (&optional (*tgizmo* *tgizmo*))
   (setf (tgizmo-nstates *tgizmo*) 0)

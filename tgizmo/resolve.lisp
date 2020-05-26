@@ -11,7 +11,45 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/tgizmo/resolve
+  (:use #:cl
+        #:bps/tgizmo/defs
+        #:bps/tgizmo/mlang
+        #:bps/tgizmo/psvs
+        #:bps/tgizmo/ineqs
+        #:bps/ltms/all)
+  (:export
+   #:resolve-influences
+   #:resolved
+   #:dis
+   #:iis
+   #:ir-cwa-contradiction-handler
+   #:retract-ir-cwas
+   #:resolve-influences-on
+   #:directly-influenced
+   #:indirectly-influenced
+   #:direct-influences-on
+   #:indirect-influences-on
+   #:find-influence-ordering
+   #:update-influence-table-orderings
+   #:resolve-dis-on
+   #:zero
+   #:analyze-dis-on
+   #:cancel-via-identity
+   #:cancel-via-=
+   #:resolve-iis-on
+   #:analyze-iis-on
+   #:ir-antecedents
+   #:justify-ir-ambig
+   #:unresolved
+   #:justify-ir-result
+   #:exclude-ir-result
+   #:resolve-completely
+   #:make-ds-choice-sets
+   #:show-ir-cwas
+   #:show-ds-values))
+
+(in-package #:bps/tgizmo/resolve)
 
 (defun resolve-influences (&optional (*tgizmo* *tgizmo*)
                                      &aux unknowns)
@@ -34,20 +72,22 @@
 ;;;; Setting up for influence resolution
 
 (defun setup-IR (&optional (*tgizmo* *tgizmo*)
-                   &aux cwas)
+                 &aux cwas)
   (debugging-tgizmo :IR-DETAILS
-    "~%   Making CWA's on influences for ~A.."
-    (tgizmo-title *tgizmo*))
+                    "~%   Making CWA's on influences for ~A.."
+                    (tgizmo-title *tgizmo*))
   (tg-run-rules)
   ;; Start by closing all the influence sets
   (with-LTRE (tgizmo-LTRE *tgizmo*)
-   (dolist (q (tgizmo-quantities *tgizmo*))
-           (multiple-value-bind (m-ignore cwa work?)
-             (close-set-if-needed `(DIs ,q))
-             (when work? (push cwa cwas)))
-           (multiple-value-bind (m-ignore cwa work?)
-             (close-set-if-needed `(IIs ,q))
-             (when work? (push cwa cwas)))))
+    (dolist (q (tgizmo-quantities *tgizmo*))
+      (multiple-value-bind (m-ignore cwa work?)
+          (close-set-if-needed `(DIs ,q))
+        (declare (ignore m-ignore))
+        (when work? (push cwa cwas)))
+      (multiple-value-bind (m-ignore cwa work?)
+          (close-set-if-needed `(IIs ,q))
+        (declare (ignore m-ignore))
+        (when work? (push cwa cwas)))))
   (tg-run-rules)
   (debugging-tgizmo :IR-DETAILS "~%    IR CWA's done for ~A."
                     (tgizmo-title *tgizmo*))
@@ -60,6 +100,7 @@
 ;;;; Contradiction handling
 
 (defun IR-CWA-contradiction-handler (contradictions ltms)
+  (declare (ignore ltms))
   ;; Retracts all invalid CWA's for DIs and IIs implicated in
   ;; each contradiction.  If all cleared, proceed with computation
   (debugging-tgizmo :IR-DETAILS "~%      IR-CWA: Active Contradictions = ~A."
@@ -125,7 +166,7 @@
                 table))))
   (update-influence-table-orderings table)
 ;;; ******* Debugging
-  (setq *table* (copy-list table))
+  ;; (setq *table* (copy-list table))
   (setf (tgizmo-influence-order *tgizmo*)
         (mapcar #'car (sort table #'(lambda (x y)
                                       (< (cadr x) (cadr y)))))))
@@ -135,20 +176,20 @@
   (do ((okay? nil)
        (max -2) (oentry nil))
       (okay? table)
-      (setq okay? t)
-      (dolist (entry table)
-              (when (cddr entry)
-                    ;; For those with constrainers,
-                    (setq max -2)
-                    (dolist (other (cddr entry))
-                            (setq oentry (assoc other table
-                                                :TEST #'equal))
-                            (when oentry
-                                  (if (> (cadr oentry) max)
-                                      (setq max (cadr oentry)))))
-                    (when (> (1+ max) (cadr entry))
-                          (setf (cadr entry) (1+ max))
-                          (setq okay? nil))))))
+    (setq okay? t)
+    (dolist (entry table)
+      (when (cddr entry)
+        ;; For those with constrainers,
+        (setq max -2)
+        (dolist (other (cddr entry))
+          (setq oentry (assoc other table
+                              :TEST #'equal))
+          (when oentry
+            (if (> (cadr oentry) max)
+                (setq max (cadr oentry)))))
+        (when (> (1+ max) (cadr entry))
+          (setf (cadr entry) (1+ max))
+          (setq okay? nil))))))
 
 ;;;; Resolving direct influences
 
@@ -163,22 +204,22 @@
   (setq dis (direct-influences-on q))
   (unless dis (error "Direct influences for ~A not closed." q))
   (dolist (inf (third dis))
-          (case (comparison? (setq n `(A ,(third inf))) 'ZERO)
-                (:= (setq entry (cons (third inf) (eq-forms n 'zero)))
-                    (push entry eq))
-                (:< (setq entry (cons (third inf) (lt-forms n 'zero)))
-                    (if (eq (car inf) 'I+) (push entry lt)
-                      (push entry gt)))
-                (:> (setq entry (cons (third inf) (gt-forms n 'zero)))
-                    (if (eq (car inf) 'I+) (push entry gt)
-                      (push entry lt)))
-                (:<= (setq entry (cons (third inf) (lte-forms n 'zero)))
-                     (if (eq (car inf) 'I+) (push entry lte)
-                      (push entry gte)))
-                (:>= (setq entry (cons (third inf) (gte-forms n 'zero)))
-                     (if (eq (car inf) 'I+) (push entry gte)
-                       (push entry lte)))
-                (t (push (third inf) unk))))
+    (case (comparison? (setq n `(A ,(third inf))) 'ZERO)
+      (:= (setq entry (cons (third inf) (eq-forms n 'zero)))
+          (push entry eq))
+      (:< (setq entry (cons (third inf) (lt-forms n 'zero)))
+          (if (eq (car inf) 'I+) (push entry lt)
+              (push entry gt)))
+      (:> (setq entry (cons (third inf) (gt-forms n 'zero)))
+          (if (eq (car inf) 'I+) (push entry gt)
+              (push entry lt)))
+      (:<= (setq entry (cons (third inf) (lte-forms n 'zero)))
+           (if (eq (car inf) 'I+) (push entry lte)
+               (push entry gte)))
+      (:>= (setq entry (cons (third inf) (gte-forms n 'zero)))
+           (if (eq (car inf) 'I+) (push entry gte)
+               (push entry lte)))
+      (t (push (third inf) unk))))
   ;; Punt if some unknown
   (when unk (return-from RESOLVE-DIS-ON (values nil :UNKNOWNS unk)))
   (analyze-dis-on q lt lte eq gte gt (list dis)))
@@ -193,11 +234,11 @@
         ((and (null lt) (null gt) (null gte)) ;; Could be 0 or -1
          ;; Avoid redundant justifications
          (unless (tg-false-forms? (gt-forms `(D ,q) 'ZERO))
-                 (exclude-ir-result q lt lte eq gte gt 1 t antes))
+           (exclude-ir-result q lt lte eq gte gt 1 t antes))
          (values nil :LTE lte))
         ((and (null lt) (null gt) (null lte)) ;; Could be 0 or 1
          (unless (tg-false-forms? (lt-forms `(D ,q) 'ZERO))
-                 (exclude-ir-result q lt lte eq gte gt -1 t antes))
+           (exclude-ir-result q lt lte eq gte gt -1 t antes))
          (values nil :GTE gte))
         ((and (null lt) (null lte)) ;; Must be 1
          (justify-ir-result q nil nil eq gte gt 1 t antes)
@@ -222,38 +263,36 @@
 
 (defun cancel-via-identity (gts lts cs?)
   (do ((gs gts (cdr gs))
-       (cancelled? cs?)
-       (match nil))
+       (cancelled? cs?))
       ((null gs)
        (values (delete nil gts)
                (delete nil lts)
                cancelled?))
-      (do ((ls lts (cdr ls)))
-          ((null ls))
-          (when (car ls)
-                (when (equal (caar gs) (caar ls))
-                      (setq cancelled? t)
-                      (setf (car gs) nil)
-                      (setf (car ls) nil))))))
+    (do ((ls lts (cdr ls)))
+        ((null ls))
+      (when (car ls)
+        (when (equal (caar gs) (caar ls))
+          (setq cancelled? t)
+          (setf (car gs) nil)
+          (setf (car ls) nil))))))
 
 (defun cancel-via-= (gts lts antes cs?)
   (do ((gs gts (cdr gs))
-       (cancelled? cs?)
-       (match nil))
+       (cancelled? cs?))
       ((null gs)
        (values (delete nil gts)
                (delete nil lts)
                antes
                cancelled?))
-      (do ((ls lts (cdr ls)))
-          ((null ls))
-          (when (car ls)
-                (when (equal-to? (caar gs) (caar ls))
-                      (setq antes (nconc (eq-forms (caar gs) (caar ls))
-                                         antes)
-                            cancelled? t)
-                      (setf (car gs) nil)
-                      (setf (car ls) nil))))))
+    (do ((ls lts (cdr ls)))
+        ((null ls))
+      (when (car ls)
+        (when (equal-to? (caar gs) (caar ls))
+          (setq antes (nconc (eq-forms (caar gs) (caar ls))
+                             antes)
+                cancelled? t)
+          (setf (car gs) nil)
+          (setf (car ls) nil))))))
 
 ;;;; Resolving indirect influences
 
@@ -262,27 +301,27 @@
   (setq iis (indirect-influences-on q))
   (unless iis (error "Indirect influences for ~A not closed." q))
   (dolist (inf (third iis))
-          (case (comparison? (setq n `(D ,(third inf))) 'ZERO)
-                (:= (setq entry (cons n (eq-forms n 'ZERO)))
-                    (push entry eq))
-                (:< (setq entry (cons n (lt-forms n 'ZERO)))
-                    (if (eq (car inf) 'qprop) (push entry lt)
-                      (push entry gt)))
-                (:> (setq entry (cons n (gt-forms n 'ZERO)))
-                    (if (eq (car inf) 'qprop) (push entry gt)
-                      (push entry lt)))
-                (:<= (setq entry (cons n (lte-forms n 'ZERO)))
-                     (if (eq (car inf) 'qprop) (push entry lte)
-                       (push entry gte)))
-                (:>= (setq entry (cons n (gte-forms n 'ZERO)))
-                     (if (eq (car inf) 'qprop) (push entry gte)
-                       (push entry lte)))
-                (t (push (third inf) unk))))
+    (case (comparison? (setq n `(D ,(third inf))) 'ZERO)
+      (:= (setq entry (cons n (eq-forms n 'ZERO)))
+          (push entry eq))
+      (:< (setq entry (cons n (lt-forms n 'ZERO)))
+          (if (eq (car inf) 'qprop) (push entry lt)
+              (push entry gt)))
+      (:> (setq entry (cons n (gt-forms n 'ZERO)))
+          (if (eq (car inf) 'qprop) (push entry gt)
+              (push entry lt)))
+      (:<= (setq entry (cons n (lte-forms n 'ZERO)))
+           (if (eq (car inf) 'qprop) (push entry lte)
+               (push entry gte)))
+      (:>= (setq entry (cons n (gte-forms n 'ZERO)))
+           (if (eq (car inf) 'qprop) (push entry gte)
+               (push entry lte)))
+      (t (push (third inf) unk))))
   ;; Punt if some unknown
   (when unk (return-from RESOLVE-IIS-ON (values nil :UNKNOWNS unk)))
   (analyze-iis-on q lt lte eq gte gt (list iis)))
 
-(defun analyze-iis-on (q lt lte eq gte gt antes &aux cs?)
+(defun analyze-iis-on (q lt lte eq gte gt antes)
   (cond ((and (null lt) (null lte) ;; Clearly Ds[q]=0
               (null gt) (null gte))
          (justify-ir-result q nil nil eq gte gt 0 nil antes)
@@ -290,11 +329,11 @@
         ((and (null lt) (null gt) (null gte)) ;; Could be 0 or -1
          ;; Avoid redundant justifications
          (unless (tg-false-forms? (gt-forms `(D ,q) 'ZERO))
-                 (exclude-ir-result q lt lte eq gte gt 1 nil antes))
+           (exclude-ir-result q lt lte eq gte gt 1 nil antes))
          (values nil :LTE lte))
         ((and (null lt) (null gt) (null lte)) ;; Could be 0 or 1
          (unless (tg-false-forms? (lt-forms `(D ,q) 'ZERO))
-                 (exclude-ir-result q lt lte eq gte gt -1 nil antes))
+           (exclude-ir-result q lt lte eq gte gt -1 nil antes))
          (values nil :GTE gte))
         ((and (null lt) (null lte)) ;; Must be 1
          (justify-ir-result q nil nil eq gte gt 1 nil antes)
@@ -309,7 +348,7 @@
 
 ;;;; Installing IR results
 
-(defun ir-antecedents (antes lt lte eq gte gt &aux n)
+(defun ir-antecedents (antes lt lte eq gte gt)
   `(:AND ,@ antes
          ,@ (mapcan #'cdr lt)
          ,@ (mapcan #'cdr lte)
@@ -371,20 +410,20 @@
 
 (defun show-IR-CWAs (&optional (*tgizmo* *tgizmo*) &aux set)
   (dolist (q (tgizmo-quantities *tgizmo*))
-          (setq set (direct-influences-on q))
-          (when set
-                (format t "~% DIs[~A]={~A}."
-                        q (third set)))
-          (setq set (indirect-influences-on q))
-          (when set
-                (format t "~% IIs[~A]={~A}."
-                        q (third set)))))
+    (setq set (direct-influences-on q))
+    (when set
+      (format t "~% DIs[~A]={~A}."
+              q (third set)))
+    (setq set (indirect-influences-on q))
+    (when set
+      (format t "~% IIs[~A]={~A}."
+              q (third set)))))
 
 (defun show-ds-values (&optional (*tgizmo* *tgizmo*)
                                  (qlist :NADA))
   (if (eq qlist :NADA)
       (setq qlist (tgizmo-quantities *tgizmo*)))
   (dolist (q qlist)
-          (format t "~%   ~A"
-                  (Ds-value-string q
-                                   (rel-value `(D ,q) 'ZERO)))))
+    (format t "~%   ~A"
+            (Ds-value-string q
+                             (rel-value `(D ,q) 'ZERO)))))
