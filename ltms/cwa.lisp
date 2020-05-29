@@ -156,8 +156,8 @@
 ;;; to a designated tag to signal the assumer that
 ;;; the set is no longer believed.
 
-(defun set-cwa-handler (clauses ltms set-name cwa tag
-                                &aux asns losers)
+(defun set-cwa-handler (clauses ltms set-name cwa tag &aux asns)
+  (declare (ignore ltms set-name))
   (let ((cwa-node (get-tms-node cwa)))
    (dolist (cl clauses) ;; For each contradictory clause,
     (setq asns (assumptions-of-clause cl))

@@ -13,39 +13,22 @@
 ;;; paragraph must be included in any separate copy of this file.
 
 (defpackage #:bps/ltms/cltms
-  (:use #:cl)
+  (:use #:cl #:bps/ltms/ltms)
   (:export
-   #:map-over
-   #:add-formula
-   #:normalize-disjunction
-   #:normalize-conjunction
-   #:disjoin-clauses
-   #:compile-formula
-   #:add-clause
-   #:simplify-consensus
-   #:simplify-subsume-consensus
-   #:insert-clause
-   #:index-clause
-   #:literal-connections
+   #:c-add-formula
+   #:c-normalize-disjunction
+   #:c-normalize-conjunction
+   #:c-compile-formula
+   #:c-add-clause
+   #:c-insert-true-clause
+   #:c-insert-false-clause
    #:propagate-more-unknownness
    #:full-add-clause
-   #:insert-list2
-   #:insert-queue
-   #:insert-list
-   #:complete-ltms
-   #:delay-sat?
    #:ipia
-   #:subsumed?
-   #:add-to-trie
-   #:build-trie
-   #:remove-subsumed
    #:walk-trie
-   #:collect
-   #:remove-clause
-   #:install-clause
-   #:process-clause
    #:tms-env
-   #:pi ;; change to prime-implicates
+   #:prime-implicates
+   #:complete-ltms
    ))
 
 (in-package #:bps/ltms/cltms)
@@ -56,19 +39,20 @@
   `(add-clause-internal
      (sort-clause (mapcar #'(lambda (literal)
                               (if (eq (cdr literal) :TRUE)
-                                  (tms-node-true (,mapf (car literal)))
-                                  (tms-node-false (,mapf (car literal)))))
+                                  (tms-node-true-literal (,mapf (car literal)))
+                                  (tms-node-false-literal (,mapf (car literal)))))
                           ,literals))
      ,informant
      t))
 
-(defun add-formula (ltms formula &optional informant
+(defun c-add-formula (ltms formula &optional informant
                     &aux clauses tltms literals)
   (setq tltms (create-ltms "Temporary for add-formula"
                            :COMPLETE :DELAY :DELAY-SAT nil)
         clauses (normalize ltms formula))
   (unless informant (setq informant (list :IMPLIED-BY formula)))
   (maphash #'(lambda (ignore node)
+               (declare (ignore ignore))
                (setf (tms-node-mark node) 0))
            (ltms-nodes ltms))
   (dolist (clause clauses)
@@ -87,9 +71,9 @@
   (check-for-contradictions ltms)
   (if (eq (ltms-complete ltms) :COMPLETE) (ipia ltms)))
 
-(defun normalize-disjunction (exp negate &aux result disj ltms nltms)
+(defun c-normalize-disjunction (exp negate &aux result disj ltms nltms)
   (unless (cdr exp)
-    (return-from normalize-disjunction (list nil)))
+    (return-from c-normalize-disjunction (list nil)))
   (setq result (normalize-1 (cadr exp) negate)
         ltms (create-ltms "Normalize disjunction"))
   (dolist (c result) (add-to-trie (make-clause :LITERALS c) ltms))
@@ -106,7 +90,7 @@
     (setq ltms nltms))
   (mapcar #'clause-literals (collect ltms)))
 
-(defun normalize-conjunction (exp negate &aux ltms)
+(defun c-normalize-conjunction (exp negate &aux ltms)
   (setq ltms (create-ltms "Normalize conjunction"))
   (dolist (sub-exp (cdr exp))
     (dolist (disjunct (normalize-1 sub-exp negate))
@@ -129,7 +113,7 @@
            (push (pop terms1) result))
           (t (push (pop terms2) result)))))
 
-(defmacro compile-formula (run-tms f &optional informant &aux ltms)
+(defmacro c-compile-formula (run-tms f &optional informant &aux ltms)
   (setq ltms (create-ltms f :COMPLETE :DELAY :DELAY-SAT nil))
   (dolist (clause (normalize ltms (expand-formula f)))
     (add-clause-internal clause nil t))
@@ -137,19 +121,19 @@
   (generate-code ltms run-tms informant))
 
 ;;; Add clause
-(defun add-clause (true-nodes false-nodes &optional informant)
+(defun c-add-clause (true-nodes false-nodes &optional informant)
   (add-clause-internal
-    (sort-clause (nconc (mapcar #'tms-node-true true-nodes)
-                        (mapcar #'tms-node-false false-nodes)))
+    (sort-clause (nconc (mapcar #'tms-node-true-literal true-nodes)
+                        (mapcar #'tms-node-false-literal false-nodes)))
     informant
     nil))
 
 ;;; Consensus algorithm
 (defun simplify-consensus (cl1 cl2 term1 conses &aux result compare)
-  (macrolet ((push (a b) `(let ((cons (pop conses)))
-                            (rplaca cons ,a)
-                            (rplacd cons ,b)
-                            (setq ,b cons))))
+  (macrolet ((push2 (a b) `(let ((cons (pop conses)))
+                             (rplaca cons ,a)
+                             (rplacd cons ,b)
+                             (setq ,b cons))))
     (unless (and (clause-informant cl1)
                  (eq (clause-informant cl1)
                      (clause-informant cl2)))
@@ -159,7 +143,7 @@
         (cond ((null terms1) (return (nreconc result terms2)))
               ((null terms2) (return (nreconc result terms1)))
               ((eq (car terms1) (car terms2))
-               (push (pop terms1) result)
+               (push2 (pop terms1) result)
                (pop terms2))
               ((= 0 (setq compare (- (tms-node-index (caar terms1))
                                      (tms-node-index (caar terms2)))))
@@ -167,8 +151,8 @@
                  (return nil))
                (pop terms2) (pop terms1))
               ((< compare 0)
-               (push (pop terms1) result))
-              (t (push (pop terms2) result)))))))
+               (push2 (pop terms1) result))
+              (t (push2 (pop terms2) result)))))))
 
 (defun simplify-subsume-consensus (ltms cl1 cl2 p &aux literals)
   (when (and (or (not (clause-informant cl1))
@@ -189,17 +173,17 @@
             (rplacd previous (cons ,cl tail))
             (setf ,list (cons ,cl tail))))))
 
-(defun insert-true-clause (cl node)
+(defun c-insert-true-clause (cl node)
   (insert-clause cl (tms-node-true-clauses node)))
 
-(defun insert-false-clause (cl node)
+(defun c-insert-false-clause (cl node)
   (insert-clause cl (tms-node-false-clauses node)))
 
 (defun index-clause (cl ltms)
   (dolist (term (clause-literals cl))
     (ecase (cdr term)
-      (:TRUE (insert-true-clause cl (car term)))
-      (:FALSE (insert-false-clause cl (car term)))))
+      (:TRUE (c-insert-true-clause cl (car term)))
+      (:FALSE (c-insert-false-clause cl (car term)))))
   (check-clauses ltms (list cl)))
 
 (defun literal-connections (literal)
@@ -240,7 +224,9 @@
   (setf (clause-status cl) :QUEUED)
   (insert-list2 cl (ltms-queue ltms)))
 
-(defun insert-list-1 (cl list) (insert-list2 cl list) list)
+(defun insert-list-1 (cl list)
+  (insert-list2 cl list)
+  list)
 
 (defmacro insert-list (cl list)
   `(setq ,list (insert-list-1 ,cl ,list)))
@@ -421,8 +407,8 @@
 
 (defun tms-env (node sign &aux label env)
   (if (tms-node-assumption? node)
-      (push (list (ecase sign (:TRUE (tms-node-true node))
-                              (:FALSE (tms-node-false node))))
+      (push (list (ecase sign (:TRUE (tms-node-true-literal node))
+                              (:FALSE (tms-node-false-literal node))))
             label))
   (dolist (p (ecase sign (:TRUE (tms-node-true-clauses node))
                          (:FALSE (tms-node-false-clauses node))))
@@ -434,18 +420,19 @@
       (dolist (lit (clause-literals p))
         (unless (eq (car lit) node)
           (push (if (eq (cdr lit) :TRUE)
-                    (tms-node-false (car lit))
-                    (tms-node-true (car lit)))
+                    (tms-node-false-literal (car lit))
+                    (tms-node-true-literal (car lit)))
                 env)))
       (push env label)))
   label)
 
-(defun pi (formula &aux ltms tltms literals clauses)
+(defun prime-implicates (formula &aux ltms tltms literals clauses)
   (setq ltms (create-ltms "Prime Implicates")
         tltms (create-ltms "Prime Implicates"
                            :COMPLETE :DELAY :DELAY-SAT nil)
         clauses (normalize ltms formula))
   (maphash #'(lambda (ignore node)
+               (declare (ignore ignore))
                (setf (tms-node-mark node) 0)
                (push node literals))
            (ltms-nodes ltms))

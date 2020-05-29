@@ -14,4 +14,5 @@
    #:bps/ltms/indirect
    #:bps/ltms/cwa
    #:bps/ltms/dds
+   #:bps/ltms/cltms
    ))

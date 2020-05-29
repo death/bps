@@ -108,10 +108,27 @@
    #:node-show-clauses
    #:explore-network
    ;; Complete LTMS
+   #:c-add-formula
+   #:c-normalize-disjunction
+   #:c-normalize-conjunction
+   #:c-compile-formula
+   #:c-add-clause
+   #:c-insert-true-clause
+   #:c-insert-false-clause
    #:full-add-clause
    #:ipia
    #:propagate-more-unknownness
    #:walk-trie
+   #:tms-env
+   #:prime-implicates
+   #:complete-ltms
+   ;; For CLTMS use
+   #:add-clause-internal
+   #:bcp-add-clause
+   #:generate-code
+   #:make-clause
+   #:normalize
+   #:normalize-1
    ))
 
 (in-package #:bps/ltms/ltms)
@@ -305,11 +322,14 @@
 
 ;;; Adding formulas to the LTMS.
 (defun add-formula (ltms formula &optional informant)
-  (setq informant (list :IMPLIED-BY formula informant))
-  (dolist (clause (normalize ltms formula))
-    (unless (eq :TRUE (setq clause (simplify-clause clause)))
-        (add-clause-internal clause informant T)))
-  (check-for-contradictions ltms))
+  (cond ((ltms-complete ltms)
+         (c-add-formula ltms formula informant))
+        (t
+         (setq informant (list :IMPLIED-BY formula informant))
+         (dolist (clause (normalize ltms formula))
+           (unless (eq :TRUE (setq clause (simplify-clause clause)))
+             (add-clause-internal clause informant T)))
+         (check-for-contradictions ltms))))
 
 (defun simplify-clause (literals)
   (setq literals (sort-clause literals))
@@ -362,7 +382,10 @@
                negate))
 
 (defun normalize-conjunction (exp negate)
-  (mapcan #'(lambda (sub) (normalize-1 sub negate)) (cdr exp)))
+  (cond ((ltms-complete *ltms*)
+         (c-normalize-conjunction exp negate))
+        (t
+         (mapcan #'(lambda (sub) (normalize-1 sub negate)) (cdr exp)))))
 
 
 (defun normalize-iff (exp negate)
@@ -370,12 +393,15 @@
          (normalize-1 `(:IMPLIES ,(caddr exp) ,(cadr exp)) negate)))
 
 (defun normalize-disjunction (exp negate)
-  (unless (cdr exp)
-    (return-from normalize-disjunction (list nil)))
-  (do ((result (normalize-1 (cadr exp) negate))
-       (rest (cddr exp) (cdr rest)))
-      ((null rest) result)
-    (setq result (disjoin (normalize-1 (car rest) negate) result))))
+  (cond ((ltms-complete *ltms*)
+         (c-normalize-disjunction exp negate))
+        (t
+         (unless (cdr exp)
+           (return-from normalize-disjunction (list nil)))
+         (do ((result (normalize-1 (cadr exp) negate))
+              (rest (cddr exp) (cdr rest)))
+             ((null rest) result)
+           (setq result (disjoin (normalize-1 (car rest) negate) result))))))
 
 (defun disjoin (conj1 conj2)
   (unless (or conj1 conj2) (return-from disjoin nil))
@@ -442,10 +468,15 @@
 
 ;;; Adding clauses
 (defun add-clause (true-nodes false-nodes &optional informant)
-  (add-clause-internal (nconc (mapcar #'tms-node-true-literal true-nodes)
-                              (mapcar #'tms-node-false-literal false-nodes))
-                       informant
-                       nil))
+  (let* ((some-node (or (car true-nodes) (car false-nodes)))
+         (ltms (tms-node-ltms some-node)))
+    (cond ((ltms-complete ltms)
+           (c-add-clause true-nodes false-nodes informant))
+          (t
+           (add-clause-internal (nconc (mapcar #'tms-node-true-literal true-nodes)
+                                       (mapcar #'tms-node-false-literal false-nodes))
+                                informant
+                                nil)))))
 
 (defun add-clause-internal (literals informant internal &aux ltms)
   (setq ltms (tms-node-ltms
@@ -479,10 +510,16 @@
   cl)
 
 (defun insert-true-clause (cl node)
-  (push cl (tms-node-true-clauses node)))
+  (cond ((ltms-complete (tms-node-ltms node))
+         (c-insert-true-clause cl node))
+        (t
+         (push cl (tms-node-true-clauses node)))))
 
 (defun insert-false-clause (cl node)
-  (push cl (tms-node-false-clauses node)))
+  (cond ((ltms-complete (tms-node-ltms node))
+         (c-insert-false-clause cl node))
+        (t
+         (push cl (tms-node-false-clauses node)))))
 
 (defun add-nogood (culprit sign assumptions &aux trues falses)
   (dolist (a assumptions (add-clause trues falses 'NOGOOD))
