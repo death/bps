@@ -281,7 +281,7 @@
            (enqueue *ftre* (cons (rule-body rule) bindings)
                     (rule-assumption? rule))))))
 
-(defun run-rules (*ftre*)
+(defun run-rules (&optional (*ftre* *ftre*))
   (do ((form (dequeue *ftre*) (dequeue *ftre*))
        (counter 0 (1+ counter)))
       ((null form)
