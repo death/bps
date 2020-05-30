@@ -11,12 +11,14 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/atms/bcode
+  (:use #:cl
+        #:bps/atms)
+  (:export))
 
-(defvar *blocks-file*
-  #+ILS  "/u/bps/code/atms/blocks"
-  #+PARC "virgo:/virgo/dekleer/bps/code/atms/blocks"
-  #+MCL "Macintosh HD:BPS:atms:blocks")
+(in-package #:bps/atms/bcode)
+
+(defvar *blocks-file* "blocks")
 
 (defun build-blocks-problem (title blocks-list
                                    &optional (debugging nil)
@@ -29,26 +31,26 @@
   (with-atre (plnpr-atre plnpr)
    (load *blocks-file*) ;; Load basic definitions
    (dolist (block blocks-list)
-           (assert! `(block ,block) 'Definition))
+     (assert! `(block ,block) 'Definition))
    (run-rules)
    (setup-choice-sets plnpr))
   plnpr)
 
 (defun make-blocks-basis-set (blocks &aux basis)
   (dolist (block blocks)
-          ;; what the block can be on.
-      (push `((Holding ,block) (On ,block Table)
-              ,@ (mapcar #'(lambda (other)
-                             `(On ,block ,other))
-                         (remove block blocks)))
-            basis)
-      ;;; What can be on the block
-      (push `((Holding ,block) (Clear ,block)
-              ,@ (mapcar #'(lambda (other)
-                             `(ON ,other ,block))
-                         (remove block blocks)))
-            basis))
-    (cons `((HAND-EMPTY)
-            ,@ (mapcar #'(lambda (block)
-                           `(HOLDING ,block)) blocks))
+    ;; what the block can be on.
+    (push `((Holding ,block) (On ,block Table)
+            ,@ (mapcar #'(lambda (other)
+                           `(On ,block ,other))
+                       (remove block blocks)))
+          basis)
+    ;; What can be on the block
+    (push `((Holding ,block) (Clear ,block)
+            ,@ (mapcar #'(lambda (other)
+                           `(ON ,other ,block))
+                       (remove block blocks)))
           basis))
+  (cons `((HAND-EMPTY)
+          ,@ (mapcar #'(lambda (block)
+                         `(HOLDING ,block)) blocks))
+        basis))

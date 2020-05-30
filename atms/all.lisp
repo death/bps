@@ -6,9 +6,10 @@
   (:nicknames #:bps/atms)
   (:use-reexport
    #:bps/atms/atms
-   ;; #:bps/atms/unify
-   ;; #:bps/atms/jinter
-   ;; #:bps/atms/jdata
-   ;; #:bps/atms/jrules
-   ;; #:bps/atms/funify
+   #:bps/atms/unify
+   #:bps/atms/ainter
+   #:bps/atms/adata
+   #:bps/atms/arules
+   #:bps/atms/funify
+   #:bps/atms/aplanr
    ))

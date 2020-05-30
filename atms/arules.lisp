@@ -11,12 +11,30 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/atms/arules
+  (:use #:cl
+        #:bps/atms/atms
+        #:bps/atms/ainter
+        #:bps/atms/adata
+        #:bps/atms/unify
+        #:bps/atms/funify)
+  (:export
+   #:rule-file
+   #:rule
+   #:*macros-to-expand*
+   #:fully-expand-body
+   #:insert-rule
+   #:try-rules
+   #:run-rules
+   #:enqueue
+   #:dequeue
+   #:show-rules
+   #:print-rules
+   #:print-rule
+   #:get-rule))
 
-(proclaim '(special *atre* *rule-procedures* *bound-vars*
-                    *in-nodes* *imp-nodes*))
+(in-package #:bps/atms/arules)
 
-(defvar *bound-vars* nil)      ;; Tracks lexical environment
 (defvar *rule-procedures* nil) ;; while defining rules
 (defvar *in-nodes* nil)        ;; Part of rule triggering
 (defvar *imp-nodes* nil)       ;; environment.
@@ -25,7 +43,7 @@
 (defvar *file-prefix* "")
 
 (defmacro Rule-File (prefix)
-  `(eval-when (compile load eval)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
      (setq *file-counter* 0)
      (setq *file-prefix* ,prefix)))
 
@@ -72,7 +90,9 @@
            (subst 'internal-rule 'rule
                   (make-nested-rule
                    condition (cdr triggers) body))))
-  `(progn ,@ *rule-procedures* ,index-form)))
+    `(with-compilation-unit ()
+       ,@ *rule-procedures*
+       ,index-form)))
 
 (defmacro internal-rule (condition triggers-in &rest body)
   (let ((triggers (parse-triggers triggers-in)))
@@ -160,6 +180,7 @@
   (unless (eq condition :INTERN) (push 'trigger-node env))
   (setq fname (generate-rule-procedure-name pattern))
   `(defun ,fname ,env
+     (declare (ignorable ,@env))
      ,@ (cond ((eq condition :INTERN) body) ;; Just do it
               (t ;; Must check and see if the node's belief state
                  ;; matches the rule's requirements
@@ -174,21 +195,23 @@
 
 (defun generate-match-procedure (pattern var test condition)
   (multiple-value-bind (tests binding-specs)
-   (generate-match-body
-    pattern (pattern-free-variables pattern) test)
-   `(defun ,(generate-rule-procedure-name pattern)
-      (P ,@ *bound-vars*)
+      (generate-match-body
+       pattern (pattern-free-variables pattern) test)
+    `(defun ,(generate-rule-procedure-name pattern)
+         (P ,@ *bound-vars*)
+       (declare (ignorable ,@*bound-vars*))
        ;;first arg, P, is the pattern
        (if (and ,@ tests)
            (values
             T ,(if (and (null var) (null binding-specs)) nil
-                 `(list ,@ (if var '(P))
-                        ,@ (reverse binding-specs)))
-                   ,condition)))))
+                   `(list ,@ (if var '(P))
+                             ,@ (reverse binding-specs)))
+            ,condition)))))
 
 (defun scratchout (l1 l2)
   ;non-destructive and order-preserving
-  (dolist (el1 l1 l2) (setq l2 (remove el1 l2))))
+  (dolist (el1 l1 l2)
+    (setq l2 (remove el1 l2))))
 
 (defun generate-rule-procedure-name (pattern)
   (intern (format nil "~A-~A-~A"
@@ -256,7 +279,7 @@
                        (:INTERN
                         (cons (rule-in-nodes rule)
                               (rule-imp-nodes rule)))))
-                a))))
+               a))))
 
 (defun run-rules (&optional (*atre* *atre*))
   (setf (atre-queue *atre*)
@@ -319,7 +342,7 @@
 
 (defun show-rules (&optional (atre *atre*)
                              (stream *standard-output*)
-                        &aux counter dist inc imp in
+                        &aux counter dist inc imp in contra
                         queued)
   (setq counter 0)
   (dolist (dbclass (atre-dbclasses atre))

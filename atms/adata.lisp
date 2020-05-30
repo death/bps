@@ -11,7 +11,48 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/atms/adata
+  (:use #:cl
+        #:bps/atms/atms
+        #:bps/atms/ainter
+        #:bps/atms/unify
+        #:bps/atms/funify)
+  (:export
+   #:assert!
+   #:assume!
+   #:already-assumed?
+   #:assume-if-needed
+   #:rassert!
+   #:contradiction
+   #:rnogood!
+   #:get-dbclass
+   #:referent
+   #:insert
+   #:fetch
+   #:get-candidates
+   #:true?
+   #:in?
+   #:out?
+   #:consistent-with?
+   #:why?
+   #:environment-of
+   #:environment-cons
+   #:view-env
+   #:justifications
+   #:the-e
+   #:get-tms-node
+   #:view-node
+   #:stringify-node
+   #:assumptions-of
+   #:get-datum
+   #:get-just
+   #:show-datum
+   #:show-data
+   #:show-context
+   #:show-dbclasses
+   #:try-rules))
+
+(in-package #:bps/atms/adata)
 
 (defun assert! (fact just &optional (*atre* *atre*)
                      &aux datum node)
@@ -26,7 +67,7 @@
   datum)
 
 (defun assume! (fact reason &optional (*atre* *atre*)
-                     &aux datum node)
+                            &aux datum node)
   (setq datum (referent fact t)
         node (datum-tms-node datum))
   (cond ((not (datum-assumption? datum))
@@ -35,16 +76,16 @@
           "~%    Assuming ~A via ~A." fact reason)
          (assume-node node))
         ((eq reason (datum-assumption? datum)))
-        (t (error
-  "Fact ~A assumed because of ~A assumed again because of ~A"
-  (show-datum datum) (datum-assumption? datum) reason)))
+        (t (error "Fact ~A assumed because of ~A assumed again because of ~A"
+                  (show-datum datum) (datum-assumption? datum) reason)))
   datum)
 
 (defun already-assumed? (fact)
   (tms-node-assumption? (get-tms-node fact)))
 
 (defun assume-if-needed (fact reason &optional (*atre* *atre*))
-  (unless (already-assumed? fact) (assume! fact reason)))
+  (unless (already-assumed? fact)
+    (assume! fact reason)))
 
 (defmacro rassert! (fact just)
   `(assert! ,(quotize fact) ,(quotize just)))
@@ -140,13 +181,13 @@
                              &aux node env)
   (setq env (atms-empty-env (atre-atms *atre*)))
   (dolist (fact facts)
-          (setq node (get-tms-node fact *atre*))
-          (unless (tms-node-assumption? node)
-  (error "Non-assumption in ENVIRONMENT-OF: ~A." fact))
-          (setq env (cons-env node env))
-          (when (env-nogood? env)
-                (return-from ENVIRONMENT-OF
-                             (values nil env))))
+    (setq node (get-tms-node fact *atre*))
+    (unless (tms-node-assumption? node)
+      (error "Non-assumption in ENVIRONMENT-OF: ~A." fact))
+    (setq env (cons-env node env))
+    (when (env-nogood? env)
+      (return-from ENVIRONMENT-OF
+        (values nil env))))
   env)
 
 (defun environment-cons (fact env)
@@ -191,8 +232,9 @@
 
 ;;; Extra printing routines
 
-(defun show-datum (datum) (format nil "~A"
-                                  (datum-lisp-form datum)))
+(defun show-datum (datum)
+  (format nil "~A" (datum-lisp-form datum)))
+
 (defun show-data (&optional (*atre* *atre*)
                             (stream *standard-output*)
                        &aux counter)

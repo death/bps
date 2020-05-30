@@ -11,9 +11,19 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/atms/atest
+  (:use #:cl
+        #:bps/atms)
+  (:export))
 
-(proclaim '(special a b c d e f))
+(in-package #:bps/atms/atest)
+
+(defvar a nil)
+(defvar b nil)
+(defvar c nil)
+(defvar d nil)
+(defvar e nil)
+(defvar f nil)
 
 (defun atms-test1 ()
   (setq *atms* (create-atms "atms-test1" :debugging T)
@@ -38,7 +48,12 @@
 
 ;;; an example from de Kleer's paper by Gitchang
 
-(proclaim '(special a b c x=1 y=x x=z y=1 z=1))
+(defvar x=1 nil)
+(defvar y=x nil)
+(defvar x=z nil)
+(defvar y=1 nil)
+(defvar z=1 nil)
+(defvar *atms* nil)
 
 (defun step-1 ()
   (setq *atms* (create-atms "Step-1")

@@ -11,7 +11,74 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/atms/ainter
+  (:use #:cl
+        #:bps/atms/atms)
+  (:export
+   #:atre
+   #:atre?
+   #:atre-title
+   #:atre-atms
+   #:atre-dbclasses
+   #:atre-dbclass-table
+   #:atre-datum-counter
+   #:atre-rules
+   #:atre-rule-counter
+   #:atre-debugging
+   #:atre-queue
+   #:atre-rules-run
+   #:atre-in-rules
+   #:atre-focus
+   #:atre-contradiction-rules
+   #:atre-imp-rules
+   #:*atre*
+   #:with-atre
+   #:in-atre
+   #:debugging-atre
+   #:dbclass
+   #:make-dbclass
+   #:dbclass-name
+   #:dbclass-atre
+   #:dbclass-facts
+   #:dbclass-rules
+   #:datum
+   #:make-datum
+   #:datum-counter
+   #:datum-atre
+   #:datum-lisp-form
+   #:datum-tms-node
+   #:datum-dbclass
+   #:datum-assumption?
+   #:datum-plist
+   #:rule
+   #:make-rule
+   #:rule-counter
+   #:rule-atre
+   #:rule-dbclass
+   #:rule-matcher
+   #:rule-body
+   #:rule-in-nodes
+   #:rule-imp-nodes
+   #:create-atre
+   #:change-atre
+   #:run
+   #:run-forms
+   #:show
+   #:solutions
+   #:change-focus
+   #:focus-okay?
+   #:with-focus
+   #:contradiction-rule
+   #:enqueue
+   #:get-dbclass
+   #:get-tms-node
+   #:run-rules
+   #:show-data
+   #:show-rules
+   #:stringify-node
+   #:false))
+
+(in-package #:bps/atms/ainter)
 
 (defstruct (atre (:PREDICATE atre?)
                  (:PRINT-FUNCTION print-atre))
@@ -108,25 +175,32 @@
 
 ;;;; Running ATRE
 
-(defun read-form () (read))
+(defun read-form ()
+  (read))
 
 (defun run (&optional (atre *ATRE*)) ;; Toplevel driver function
+  (let ((*package* (find-package "BPS/ATMS/AINTER")))
     (format T "~%>>")
     (do ((form (read-form) (read-form)))
-        ((member form '(quit stop exit abort)) nil)
-        (format t "~%~A" (eval form))
-        (run-rules atre)
-        (format t "~%>>")))
+        ((and (symbolp form)
+              (member form '(quit stop exit abort) :test #'string-equal))
+         nil)
+      (format t "~%~A" (eval form))
+      (run-rules atre)
+      (format t "~%>>"))))
 
 (defun run-forms (forms &optional (atre *ATRE*))
-  (dolist (form forms) (eval form) (run-rules atre)))
+  (dolist (form forms)
+    (eval form)
+    (run-rules atre)))
 
 (defun show (&optional (atre *ATRE*) (stream *standard-output*))
   (format stream "For ATRE ~A:~% Focus = ~A."
           (atre-title atre)
           (if (env? (atre-focus atre)) (atre-focus atre)
             "empty"))
-  (show-data atre stream) (show-rules atre stream))
+  (show-data atre stream)
+  (show-rules atre stream))
 
 (defun solutions (atre choice-sets)
   (interpretations

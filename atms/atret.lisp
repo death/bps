@@ -11,9 +11,14 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/atms/atret
+  (:use #:cl
+        #:bps/atms)
+  (:export))
 
-(proclaim '(special *a*))
+(in-package #:bps/atms/atret)
+
+(defvar *a* nil)
 
 (defun atre-test1 (&optional (debugging t))
   (setq *atre* (create-atre "Test ATRE"

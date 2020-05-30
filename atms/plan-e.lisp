@@ -11,8 +11,6 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
-
 (defun envision (&optional (*plnpr* *plnpr*)
                  &aux states)
   (setq states (solutions (plnpr-atre *plnpr*)
@@ -31,7 +29,7 @@
        (push state entry)) states))
 
 (defun show-envisionment (&optional (*plnpr* *plnpr*)
-                            (stream *standard-input*)
+                            (stream *standard-output*)
                           &aux states trans-table)
   (setq states (getf (plnpr-plist *plnpr*) :STATES))
   (cond ((null states)

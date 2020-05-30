@@ -11,7 +11,44 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/atms/aplanr
+  (:use #:cl
+        #:bps/atms/atms
+        #:bps/atms/unify
+        #:bps/atms/ainter
+        #:bps/atms/adata
+        #:bps/atms/arules
+        #:bps/atms/funify)
+  (:export
+   #:plnpr
+   #:plnpr?
+   #:plnpr-title
+   #:plnpr-atre
+   #:plnpr-basis-set
+   #:plnpr-operators
+   #:plnpr-plist
+   #:*plnpr*
+   #:with-plnpr
+   #:in-plnpr
+   #:debug-plnpr
+   #:create-planning-problem
+   #:setup-choice-sets
+   #:set-debug-plnpr
+   #:operator
+   #:operator?
+   #:operator-form
+   #:operator-preconditions
+   #:operator-add-list
+   #:operator-delete-list
+   #:defoperator
+   #:find-applicable-operators
+   #:fetch-operator
+   #:apply-operator
+   #:fetch-states
+   #:satisfies-goal?
+   #:show-plan))
+
+(in-package #:bps/atms/aplanr)
 
 (defstruct (plnpr (:PREDICATE plnpr?)
                   (:PRINT-FUNCTION print-plnpr))
@@ -45,16 +82,16 @@
   (in-plnpr plnpr))
 
 (defun setup-choice-sets (&optional (*plnpr* *plnpr*)
-                                    &aux informant)
+                          &aux informant)
   (setq informant
         (intern (format nil "BASIS SET(~A)"
                         (plnpr-title *plnpr*))
                 'keyword))
   (with-atre (plnpr-atre *plnpr*)
-     (dolist (choice-set (plnpr-basis-set *plnpr*))
+    (dolist (choice-set (plnpr-basis-set *plnpr*))
       (dolist (choice choice-set)
-       (assume-if-needed choice informant)))
-     (run-rules)))
+        (assume-if-needed choice informant)))
+    (run-rules)))
 
 (defun set-debug-plnpr (state &optional (*plnpr* *plnpr*))
   (setf (getf (plnpr-plist *plnpr*) :DEBUGGING) state))
@@ -104,8 +141,8 @@
                                         &aux result)
   (dolist (candidate (fetch `(applicable ?x) (plnpr-atre *plnpr*))
                      result)
-          (if (in? candidate state)
-              (push (cadr candidate) result))))
+    (if (in? candidate state)
+        (push (cadr candidate) result))))
 
 (defun fetch-operator (op-name)
   (cdr (assoc op-name (plnpr-operators *plnpr*))))
@@ -175,5 +212,5 @@
   (do ((steps (reverse plan) (cddr steps)))
       ((null steps))
     (print-env (car steps))
-    (when (cadr steps) (format t "~%  then, by ~A, "
-                               (cadr steps)))))
+    (when (cadr steps)
+      (format t "~%  then, by ~A, " (cadr steps)))))
