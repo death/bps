@@ -25,4 +25,5 @@
                "bps/jtms/all"
                "bps/ltms/all"
                "bps/tgizmo/all"
-               "bps/atms/all"))
+               "bps/atms/all"
+               "bps/tcon/all"))
