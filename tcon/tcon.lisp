@@ -13,7 +13,83 @@
 
 (defpackage #:bps/tcon/tcon
   (:use #:cl)
-  (:export))
+  (:export
+   #:tcon
+   #:tcon-title
+   #:tcon-prototypes
+   #:tcon-cells
+   #:tcon-constraints
+   #:tcon-beg-queue
+   #:tcon-help-queue
+   #:tcon-coincidence-handler
+   #:tcon-contradiction-handler
+   #:tcon-debugging
+   #:*tcon*
+   #:$self
+   #:$informant
+   #:cell
+   #:cell?
+   #:cell-name
+   #:cell-tcon
+   #:cell-owner
+   #:cell-value
+   #:cell-informant
+   #:cell-roles
+   #:cell-plist
+   #:constraint
+   #:constraint?
+   #:constraint-name
+   #:constraint-tcon
+   #:constraint-owner
+   #:constraint-parts
+   #:constraint-prototype
+   #:prototype
+   #:prototype-name
+   #:prototype-tcon
+   #:prototype-parts
+   #:prototype-creation-forms
+   #:prototype-cells
+   #:prototype-rules
+   #:create-tcon
+   #:load-prototypes
+   #:change-tcon
+   #:formulae
+   #:>>
+   #:create
+   #:==
+   #:un==
+   #:cell-suppliers
+   #:cell-users
+   #:rule-sets
+   #:rule-uses
+   #:known?
+   #:default-coincidence-handler
+   #:nearly-zero?
+   #:ground-justification?
+   #:cell-ground
+   #:rule-ground
+   #:signal-contradiction
+   #:default-contradiction-handler
+   #:tcon-answer
+   #:with-network
+   #:use-network
+   #:set-parameter
+   #:forget-parameter
+   #:change-parameter
+   #:constant
+   #:enforce-constraints
+   #:with-contradiction-handler
+   #:what-is
+   #:constraint-values
+   #:show-network
+   #:why
+   #:premises
+   #:needs
+   #:wfs
+   #:show-suppliers
+   #:rule-1
+   #:rule-2
+   ))
 
 (in-package #:bps/tcon/tcon)
 
@@ -153,7 +229,7 @@
   (cond ((null form) form)
         ((not (listp form)) form)
         ((eq (car form) '>>) ;; A reference
-         (nconc form (list '$self)))
+         (append form (list '$self)))
         (t (cons (localize-references (car form))
                  (localize-references (cdr form))))))
 
@@ -172,11 +248,11 @@
  ;;The format of a rule is (<sets> (<input cells>) . <body>)
     (setq rule-name
           (intern (format nil "RULE-~A" (incf rule-counter))))
-    (push (cons rule-name
-                (list (cons 'SETS (car rule-spec))
-                      (cons 'USES (cadr rule-spec))
-                      (cons 'BODY (eval `(function (lambda ,(cadr rule-spec)
-                                                     ,@ (cddr rule-spec)))))))
+    (push `(cons ',rule-name
+                 (list (cons 'SETS ',(car rule-spec))
+                       (cons 'USES ',(cadr rule-spec))
+                       (cons 'BODY (function (lambda ,(cadr rule-spec)
+                                     ,@ (cddr rule-spec))))))
           rules)
     ;; Now must install index information for cells
     (setq cell-entry (assoc (car rule-spec) cells))
@@ -203,7 +279,7 @@
                (setf (cdr cell-entry)
                      (cons subentry (cdr cell-entry)))))))
   `((setf (prototype-cells ,name) ',cells)
-    (setf (prototype-rules ,name) ',rules)))
+    (setf (prototype-rules ,name) (list ,@rules))))
 
 ;;;; Creating constraints
 
