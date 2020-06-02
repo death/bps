@@ -55,6 +55,9 @@
    #:change-tcon
    #:formulae
    #:>>
+   #:pretty-name
+   #:cell-pretty-name
+   #:constraint-pretty-name
    #:create
    #:==
    #:un==
@@ -63,6 +66,11 @@
    #:rule-sets
    #:rule-uses
    #:known?
+   #:set!
+   #:help!
+   #:forget!
+   #:beg!
+   #:coincidence?
    #:default-coincidence-handler
    #:nearly-zero?
    #:ground-justification?
@@ -80,6 +88,7 @@
    #:enforce-constraints
    #:with-contradiction-handler
    #:what-is
+   #:constraint-cells
    #:constraint-values
    #:show-network
    #:why
@@ -198,7 +207,7 @@
 ;; relationships are enforced by FORMULAE, rules internal
 ;; to the constraint.
 
-(defmacro Constraint (name part-list &rest body)
+(defmacro Constraint (name part-list &body body)
   `(progn 'compile
      (let ((pr (make-prototype
                  :NAME ',name
@@ -779,7 +788,7 @@
        (format t "~%~A ~A:" indent (pretty-name (cdr part-entry)))
        (constraint-values (cdr part-entry) t nindent)))))
 
-(defun show-network (tcon)
+(defun show-network (&optional (tcon *tcon*))
  (dolist (cell (tcon-cells tcon)) (what-is cell)))
 
 ;;;; Explanations

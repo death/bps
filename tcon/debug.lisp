@@ -1,8 +1,7 @@
 ;; -*- Mode: Lisp; -*-
 
 (defun intercept (&optional (debugging? nil))
-  (create-tcon "test" :PROTOTYPE-FILE "/u/bps/code/tcon/motion.lisp"
-               :DEBUGGING debugging?)
+  (create-tcon "test" :PROTOTYPE-FILE "motion" :DEBUGGING debugging?)
   (create 'sat '2d-motion)
   (create 'int '2d-motion)
   (== (>> deltat sat) (>> deltat int))

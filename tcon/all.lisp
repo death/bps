@@ -6,4 +6,5 @@
   (:nicknames #:bps/tcon)
   (:use-reexport
    #:bps/tcon/tcon
+   #:bps/tcon/suspend
    ))

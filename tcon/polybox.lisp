@@ -11,8 +11,6 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
-
 (constraint adder ((a1 cell) (a2 cell) (sum cell))
             (formulae (sum (a1 a2) (+ a1 a2))
                       (a1 (sum a2) (- sum a2))

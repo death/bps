@@ -11,7 +11,12 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/tcon/suspend
+  (:use #:cl #:bps/tcon/tcon)
+  (:export
+   #:generate-candidates))
+
+(in-package #:bps/tcon/suspend)
 
 ;;;; Candidate generation algorithm
 
@@ -188,10 +193,7 @@
 ;;;; Test procedure
 
 (defvar *suspend-file*
-  #+ILS "/u/bps/code/tcon/polybox"
-  #+PARC "virgo:/virgo/dekleer/bps/code/tcon/polybox"
-  #+MCL "Macintosh HD:BPS:tcon:polybox"
-  #+ACLPC "E:\\code\\tcon\\polybox")
+  "polybox")
 
 (defun setup-cs-example (&optional (debugging? nil))
   (create-tcon "Polybox Example" :DEBUGGING debugging?
