@@ -13,7 +13,8 @@
                                  #:bps/jtms
                                  #:bps/ltms
                                  #:bps/tgizmo
-                                 #:bps/atms))
+                                 #:bps/atms
+                                 #:bps/tcon))
 
 (asdf:defsystem #:bps
   :description "Code from Building Problem Solvers"
