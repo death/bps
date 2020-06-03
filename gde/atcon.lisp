@@ -11,11 +11,88 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/gde/atcon
+  (:use #:cl #:bps/atms/atms)
+  (:export
+   #:atcon
+   #:atcon-p
+   #:atcon-title
+   #:atcon-cells
+   #:atcon-queue
+   #:atcon-constraints
+   #:atcon-user-parts
+   #:atcon-atms
+   #:atcon-nearly-equal
+   #:atcon-disjunctions
+   #:atcon-debugging
+   #:atcon-delay
+   #:atcon-executions
+   #:cell
+   #:cell?
+   #:cell-atcon
+   #:cell-name
+   #:cell-owner
+   #:cell-nodes
+   #:cell-users
+   #:cell-domain
+   #:value
+   #:value?
+   #:value-datum
+   #:value-cell
+   #:value-processed?
+   #:value-string
+   #:constraint
+   #:constraint?
+   #:constraint-atcon
+   #:constraint-name
+   #:constraint-owner
+   #:constraint-parts
+   #:constraint-prototype
+   #:prototype
+   #:prototype-name
+   #:prototype-parts
+   #:prototype-creation-form
+   #:prototype-cells
+   #:rule
+   #:rule-uses
+   #:rule-sets
+   #:rule-body
+   #:*atcon*
+   #:with-network
+   #:create-atcon
+   #:nearly-equal?
+   #:default-nearly-equal
+   #:constraint
+   #:assume-constraint
+   #:assumption
+   #:>>
+   #:formulae
+   #:create
+   #:==
+   #:set!
+   #:known?
+   #:assume-parameter
+   #:set-parameter
+   #:fire-constraints
+   #:solutions
+   #:disjunction
+   #:pretty-name
+   #:cell-pretty-name
+   #:constraint-pretty-name
+   #:label-string
+   #:cell-value-string
+   #:what-is
+   #:constraint-values
+   #:show-network
+   #:print-solutions
+   #:why))
+
+(in-package #:bps/gde/atcon)
 
 (defstruct (atcon (:print-function (lambda (atcon stream ignore)
-                                    (format stream "<ATCON: ~A>"
-                                            (atcon-title atcon)))))
+                                     (declare (ignore ignore))
+                                     (format stream "<ATCON: ~A>"
+                                             (atcon-title atcon)))))
   (title nil)                   ; For printing
   (cells nil)                   ; List of cells in network
   (queue nil)                   ; Rule-node pairs waiting to run.
@@ -30,8 +107,9 @@
 
 (defstruct (cell (:predicate cell?)
                  (:print-function
-                   (lambda (st str ignore)
-                     (format str "<Cell ~A>" (cell-pretty-name st)))))
+                  (lambda (st str ignore)
+                    (declare (ignore ignore))
+                    (format str "<Cell ~A>" (cell-pretty-name st)))))
   atcon                         ; What interpreter it is in.
   name                          ; Print name
   owner                         ; The constraint it belongs to
@@ -41,6 +119,7 @@
 
 (defstruct (value (:predicate value?)
                   (:print-function (lambda (st str ignore)
+                                     (declare (ignore ignore))
                                      (format str "<value:~A=~A>"
                                              (cell-name (value-cell st))
                                              (value-datum st)))))
@@ -50,27 +129,30 @@
   (string nil))                 ; User supplied string.
 
 (defstruct (constraint
-             (:predicate constraint?)
-             (:print-function (lambda (st str ignore)
-                                (format str "<Constraint ~A>"
-                        (constraint-name st)))))
-           atcon        ; What interpreter it is in.
-           name         ; Print name.
-           owner        ; The constraint it belongs to.
-           parts        ; The parts which comprise it
-           prototype)   ; Backpointer.
+               (:predicate constraint?)
+               (:print-function (lambda (st str ignore)
+                                  (declare (ignore ignore))
+                                  (format str "<Constraint ~A>"
+                                          (constraint-name st)))))
+  atcon        ; What interpreter it is in.
+  name         ; Print name.
+  owner        ; The constraint it belongs to.
+  parts        ; The parts which comprise it
+  prototype)   ; Backpointer.
 
 (defstruct (prototype
-             (:print-function (lambda (st str ignore)
-                                (format str "<Prototype ~A>"
-                                        (prototype-name st)))))
-           name           ; Print name
-           parts          ; Parts for this kind of constraint
-           creation-form  ; Extra work
-           cells)         ; Value-holding parts.
+            (:print-function (lambda (st str ignore)
+                               (declare (ignore ignore))
+                               (format str "<Prototype ~A>"
+                                       (prototype-name st)))))
+  name           ; Print name
+  parts          ; Parts for this kind of constraint
+  creation-form  ; Extra work
+  cells)         ; Value-holding parts.
 
 
 (defstruct (rule (:print-function (lambda (st str ignore)
+                                    (declare (ignore ignore))
                                     (format str "<rule ~A->~A>"
                                             (rule-uses st)
                                             (rule-sets st)))))
@@ -78,7 +160,7 @@
   (sets nil)
   (body nil))
 
-(proclaim '(special *atcon*))
+(defvar *atcon* nil)
 
 (defmacro with-network (atcon &body forms)
   `(let ((*atcon* ,atcon)) ,@ forms))
@@ -115,23 +197,24 @@
 
 ;;; Defining prototypes.
 
-(defmacro constraint (name part-list &rest body)
+(defmacro constraint (name part-list &body body)
   (constraint-1 name part-list body nil))
 
-(defmacro assume-constraint (name part-list &rest body)
+(defmacro assume-constraint (name part-list &body body)
   (constraint-1 name part-list body '((OK ASSUMPTION))))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defun constraint-1 (name part-list body new-part)
     `(let ((self (make-prototype :name ',name
-                                 :parts ',(nconc part-list new-part))))
+                                 :parts ',(append part-list new-part))))
        (macrolet ((>> (&rest args)
-                      `(nested-lookup ',(reverse args) self)))
+                    `(nested-lookup ',(reverse args) self)))
          ,@ (analyze-prototype-body body (caar new-part))
-                 (setf (gethash ',name *prototypes*) self)))))
+         (setf (gethash ',name *prototypes*) self)))))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defun analyze-prototype-body (body ok &aux creation-time now)
+    (setq body (copy-tree body))
     (dolist (form body)
       (cond ((and (listp form) (eq (car form) 'formulae))
              (if ok (dolist (spec (cdr form))
@@ -144,7 +227,7 @@
             now))
     now))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defun process-constraint-rules (rule-specs &aux rules
                                    cells rule-name cell-entry)
     (dolist (rule-spec rule-specs)
@@ -153,7 +236,8 @@
       (push `(,rule-name (make-rule :SETS ',(car rule-spec)
                                     :USES (reverse ',(cadr rule-spec))
                                     :BODY (function (lambda ,(cadr rule-spec)
-                                                      ,@ (cddr rule-spec)))))
+                                            (declare (ignorable ,@(cadr rule-spec)))
+                                            ,@ (cddr rule-spec)))))
             rules)
       (dolist (cell (cadr rule-spec))
         (setq cell-entry (assoc cell cells))
@@ -191,7 +275,6 @@
                                     :atcon atcon
                                     :owner owner
                                     :prototype prototype
-                                    :atcon atcon
                                     :parts nil))
   (do ((prototype-part (prototype-parts prototype) (cdr prototype-part))
        (supplied-part supplied-parts (cdr supplied-part)))
@@ -242,12 +325,13 @@
   `(nested-lookup ',(reverse (butlast args))
                   (gethash ',(car (last args))
                            (atcon-user-parts *atcon*))))
+
 (defun nested-lookup (indicators obj)
   (dolist (indicator indicators obj)
-          (unless obj
-            (error "Indicator path bombed out at ~A: ~A of ~A"
-                   indicator indicators obj))
-          (setq obj (lookup-part indicator obj))))
+    (unless obj
+      (error "Indicator path bombed out at ~A: ~A of ~A"
+             indicator indicators obj))
+    (setq obj (lookup-part indicator obj))))
 
 (defun lookup-part (part-name obj)
   (cdr (assoc part-name (constraint-parts obj))))
@@ -269,8 +353,8 @@
                            (constraint-parts second)))))
 
 (Constraint == ((Cell1 cell) (Cell2 cell))
-            (formulae (Cell1 (Cell2) Cell2)
-                      (Cell2 (Cell1) Cell1)))
+  (formulae (Cell1 (Cell2) Cell2)
+            (Cell2 (Cell1) Cell1)))
 
 ;;; Setting and accessing cell values.
 
@@ -487,7 +571,8 @@
       (list (constraint-name con))))
 
 (defun label-string (node &aux envs)
-  (dolist (env (tms-node-label node)) (push (env-string env) envs))
+  (dolist (env (tms-node-label node))
+    (push (env-string env) envs))
   (format nil "{~{~A~}}" envs))
 
 (defun cell-value-string (node &aux value)
@@ -541,11 +626,12 @@
                                 :stream stream)))))
 
 (defun show-network (&optional (atcon *atcon*) env)
-  (dolist (cell (atcon-cells atcon)) (what-is cell :env env)))
+  (dolist (cell (atcon-cells atcon))
+    (what-is cell :env env)))
 
 (defun print-solutions (&optional (atcon *atcon*))
-  (dolist (solution (solutions))
-    (format T "~% Cell values for solution ~A")
+  (dolist (solution (solutions atcon))
+    (format T "~% Cell values for solution ~A" solution)
     (print-env solution)
     (show-network atcon solution)))
 
