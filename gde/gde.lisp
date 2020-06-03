@@ -7,7 +7,7 @@
 ;;; Copyright (c) 1993, Kenneth D. Forbus, Northwestern University,
 ;;; and Johan de Kleer, the Xerox Corporation.
 ;;; All rights reserved.
- 
+
 ;;; See the file legal.txt for a paragraph stating scope of permission
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
@@ -22,30 +22,30 @@
 ;;; Print in standard format.
 (defun print-minimal-diagnoses ()
   (let* ((atms (atcon-atms *atcon*))
-	 (diagnoses (interpretations atms nil (atms-assumptions atms))))
+         (diagnoses (interpretations atms nil (atms-assumptions atms))))
     (format T "~%There are ~D minimal diagnoses:" (length diagnoses))
     (mapc #'print-diagnosis diagnoses)))
 
 (defun smallest-diagnoses (&aux atms diagnoses (smallest-size 0))
   (setq atms (atcon-atms *atcon*)
-	diagnoses (interpretations atms nil (atms-assumptions atms)))
+        diagnoses (interpretations atms nil (atms-assumptions atms)))
   (unless diagnoses (return-from smallest-diagnoses nil))
   (dolist (diagnosis diagnoses)
     (if (> (env-count diagnosis) smallest-size)
-	(setq smallest-size (env-count diagnosis))))
+        (setq smallest-size (env-count diagnosis))))
   (remove-if #'(lambda (env) (< (env-count env) smallest-size))
-	     diagnoses))
+             diagnoses))
 
 (defun print-smallest-diagnoses (&aux diagnoses)
   (setq diagnoses (smallest-diagnoses))
   (format T "~%There are ~D minimum cardinality diagnoses:"
-	  (length diagnoses))
+          (length diagnoses))
   (mapc #'print-diagnosis diagnoses))
 
 (defun print-diagnosis (env &aux assumptions faults printer atms)
   (setq assumptions (env-assumptions env)
-	atms (atcon-atms *atcon*)
-	printer (atms-node-string atms))
+        atms (atcon-atms *atcon*)
+        printer (atms-node-string atms))
   (dolist (a (atms-assumptions (atcon-atms *atcon*)))
     (unless (member a assumptions :test #'eq)
       (push (funcall printer a) faults)))
@@ -61,12 +61,12 @@
   probes)
 
 (defun compute-cost (cell diagnoses
-		     &aux (cost 0) count (misses 0) (base 0))
+                     &aux (cost 0) count (misses 0) (base 0))
   (when (> (length (cell-domain cell)) 0)
     (dolist (d diagnoses)
       (unless (dolist (node (cell-nodes cell))
-		(if (in-node? node d) (return T)))
-	(incf misses)))
+                (if (in-node? node d) (return T)))
+        (incf misses)))
     (setq base (/ misses (float (length (cell-domain cell))))))
   (dolist (node (cell-nodes cell))
     (setq count base)
@@ -83,22 +83,22 @@
       (print-diagnosis (car diagnoses))
       (return nil))
     (format T "~%There are ~D minimum cardinality diagnoses:"
-	    (length diagnoses))
+            (length diagnoses))
     (mapc #'print-diagnosis diagnoses)
     (setq probes (score-measurements diagnoses))
     (do ((probes probes (cdr probes)))
-	((null (cdr probes)))
+        ((null (cdr probes)))
       (unless (= (cdar probes) (cdadr probes))
-	(rplacd probes nil)))
+        (rplacd probes nil)))
     (cond ((cdr probes)
-	   (do nil (nil)
-	       (do ((j 0 (1+ j))
-		    (probes probes (cdr probes)))
-		   ((null probes))
-		 (format T "~%~D : ~A" j (caar probes)))
-	     (format T "~%Enter integer of point measured: ")
-	     (if (setq probe (nth (print (read)) probes)) (return T))))
-	  (t (setq probe (car probes))))
+           (do nil (nil)
+               (do ((j 0 (1+ j))
+                    (probes probes (cdr probes)))
+                   ((null probes))
+                 (format T "~%~D : ~A" j (caar probes)))
+             (format T "~%Enter integer of point measured: ")
+             (if (setq probe (nth (print (read)) probes)) (return T))))
+          (t (setq probe (car probes))))
     (format T "~%Please enter result of measuring ~A:" (car probe))
     (setq result (read))
     (set-parameter (car probe) result)))

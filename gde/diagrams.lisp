@@ -1,6 +1,6 @@
 ;-*- Mode: LISP; Syntax: Common-lisp; Package: USER-*-
 
-;;; Copyright (c) 1986-1993 Kenneth D. Forbus, Johan de Kleer and 
+;;; Copyright (c) 1986-1993 Kenneth D. Forbus, Johan de Kleer and
 ;;; Xerox Corporation.  All Rights Reserved.
 
 ;;; See the file legal.txt for a paragraph stating scope of permission
@@ -37,12 +37,12 @@
 (defun ole-string (node &aux value)
   (setq value (tms-node-datum node))
   (cond ((stringp value) value)
-	((value-string value))
-	((eq (cell-name (value-cell value)) 'OK)
-	 (format nil "~A" (constraint-pretty-name
-			    (cell-owner (value-cell value)))))
-	(t (format nil "~A = ~A" (cell-pretty-name (value-cell value))
-		   (value-datum value)))))
+        ((value-string value))
+        ((eq (cell-name (value-cell value)) 'OK)
+         (format nil "~A" (constraint-pretty-name
+                            (cell-owner (value-cell value)))))
+        (t (format nil "~A = ~A" (cell-pretty-name (value-cell value))
+                   (value-datum value)))))
 
 
 (defun standard-2bit ()
