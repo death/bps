@@ -104,7 +104,7 @@
    #:e
    #:print-env
    #:env-string
-   #:print-nogood
+   #:print-nogoods
    #:print-envs
    #:print-env-table
    #:print-atms-statistics
