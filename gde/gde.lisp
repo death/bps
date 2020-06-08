@@ -12,7 +12,21 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/gde/gde
+  (:use #:cl
+        #:bps/atms/atms
+        #:bps/gde/atcon)
+  (:export
+   #:print-minimal-conflicts
+   #:print-minimal-diagnoses
+   #:smallest-diagnoses
+   #:print-smallest-diganoses
+   #:print-diagnosis
+   #:score-measurements
+   #:compute-cost
+   #:diagnose))
+
+(in-package #:bps/gde/gde)
 
 (defun print-minimal-conflicts ()
   (dolist (conflicts (atms-nogood-table (atcon-atms *atcon*)))

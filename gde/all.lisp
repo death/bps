@@ -6,4 +6,5 @@
   (:nicknames #:bps/gde)
   (:use-reexport
    #:bps/gde/atcon
+   #:bps/gde/gde
    ))
