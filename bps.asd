@@ -15,7 +15,8 @@
                                  #:bps/tgizmo
                                  #:bps/atms
                                  #:bps/tcon
-                                 #:bps/gde))
+                                 #:bps/gde
+                                 #:bps/relax))
 
 (asdf:defsystem #:bps
   :description "Code from Building Problem Solvers"
@@ -29,4 +30,5 @@
                "bps/tgizmo/all"
                "bps/atms/all"
                "bps/tcon/all"
-               "bps/gde/all"))
+               "bps/gde/all"
+               "bps/relax/all"))

@@ -27,7 +27,73 @@
 ;; system is used to allow reconstruction of the course of
 ;; events without constructing explicit justifications.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/relax/waltzer
+  (:use #:cl)
+  (:export
+   #:network
+   #:network?
+   #:network-title
+   #:network-cells
+   #:network-constraints
+   #:network-name-test
+   #:network-equality-test
+   #:network-cell-queue
+   #:network-constraint-queue
+   #:network-timestamp
+   #:network-event-list
+   #:network-debug?
+   #:network-status
+   #:network-contradiction-reason
+   #:network-contradiction-hook
+   #:network-plist
+   #:debug-waltzer
+   #:create-network
+   #:cell
+   #:cell?
+   #:cell-name
+   #:cell-network
+   #:cell-value
+   #:cell-constraints
+   #:cell-possible-values
+   #:cell-out-reasons
+   #:cell-plist
+   #:build-cell
+   #:constraint
+   #:constraint?
+   #:constraint-name
+   #:constraint-network
+   #:constraint-parts
+   #:constraint-update-procedure
+   #:constraint-queued?
+   #:constraint-plist
+   #:build-constraint
+   #:add-constraint-cell
+   #:clear-network
+   #:clear-cell
+   #:push-network
+   #:pop-network
+   #:pop-cell
+   #:exclude
+   #:pick
+   #:update
+   #:fire-constraints
+   #:queue-cell
+   #:queue-constraint
+   #:check-constraints
+   #:signal-contradiction
+   #:lookup-cell
+   #:lookup-constraint
+   #:what-are
+   #:determined?
+   #:to-plunk
+   #:what-is
+   #:known?
+   #:value
+   #:search-network
+   #:show-search
+   ))
+
+(in-package #:bps/relax/waltzer)
 
 (defstruct (network (:PREDICATE network?)
                     (:PRINT-FUNCTION
