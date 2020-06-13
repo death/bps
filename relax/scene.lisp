@@ -11,7 +11,12 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
+(defpackage #:bps/relax/scene
+  (:use #:cl
+        #:bps/relax/waltzer)
+  (:export))
+
+(in-package #:bps/relax/scene)
 
 ;; This system uses WALTZER and the line/junction vocabulary from
 ;; Winston's "Artificial Intelligence", Second Edition, page 56.
@@ -28,16 +33,10 @@
 
 ;; Some default values
 (defvar *scene-file*
-  #+ILS "/u/bps/code/relax/cube"
-  #+PARC "virgo:/virgo/dekleer/bps/code/relax/cube"
-  #+MCL "Macintosh HD:BPS:relax:cube"
-  #+ACLPC "e:\\code\\relax\\cube")
+  "cube.lisp")
 
 (defvar *jcatalog-file*
-  #+ILS "/u/bps/code/relax/jcatalog.lisp"
-  #+PARC "virgo:/virgo/dekleer/bps/code/relax/jcatalog.lisp"
-  #+MCL "Macintosh HD:BPS:relax:jcatalog.lisp"
-  #+ACLPC "e:\\code\\relax\\jcatalog.lsp")
+  "jcatalog.lisp")
 
 (defun analyze-scene (scene jcatalog)
   (setq *scene-file* scene)
@@ -74,6 +73,7 @@
                 :TYPE ',type
                 :LINES (parse-junction-parts ',parts ',name
                                              #'(lambda (name role owner)
+                                                 (declare (ignore role owner))
                                                  name))))
          (entry nil))
      (setq entry (assoc ',type *jlabel-table*))
@@ -84,15 +84,15 @@
      junc))
 
 (defun read-junction-catalog (file)
-  (let ((fpointer (open file))
-        (marker (list 'foo)))
-    (setq *jlabel-table* nil)
-    (do ((form (read fpointer nil marker)
-               (read fpointer nil marker))
-         (counter 0 (1+ counter)))
-        ((eq form marker)
-         (format t "~%~A read, ~D entries." file counter))
-      (eval form))))
+  (with-open-file (fpointer file)
+    (let ((marker (list 'foo)))
+      (setq *jlabel-table* nil)
+      (do ((form (read fpointer nil marker)
+                 (read fpointer nil marker))
+           (counter 0 (1+ counter)))
+          ((eq form marker)
+           (format t "~%~A read, ~D entries." file counter))
+        (eval form)))))
 
 ;;;; Making the scene (so to speak)
 ;;; A scene consists of a collection of lines and junctions.

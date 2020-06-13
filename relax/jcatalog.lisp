@@ -11,8 +11,6 @@
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
 
-(in-package :COMMON-LISP-USER)
-
 ;; Based on Figure 3-14, Page 56, Winston.
 
 (Junction-Labelling Ell 1 :LEFT < :RIGHT <)

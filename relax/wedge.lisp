@@ -1,4 +1,4 @@
-;; -*- Mode: Lisp; -*- 
+;; -*- Mode: Lisp; -*-
 
 ;;; Wedge scene, from Winston Figure 3.6
 ;; Last edited 1/29/93, by KDF
@@ -10,8 +10,6 @@
 ;;; See the file legal.txt for a paragraph stating scope of permission
 ;;; and disclaimer of warranty.  The above copyright notice and that
 ;;; paragraph must be included in any separate copy of this file.
-
-(in-package :COMMON-LISP-USER)
 
 (scene "Wedge")
 
@@ -42,4 +40,3 @@
 (junction J9 Fork :LEFT L9 :RIGHT L11 :BOTTOM L10)
 (junction J10 Arrow :LEFT L13 :RIGHT L11 :BOTTOM L12)
 (junction J11 Fork :LEFT L15 :RIGHT L13 :BOTTOM L14)
-
