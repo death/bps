@@ -7,4 +7,5 @@
   (:use-reexport
    #:bps/relax/waltzer
    #:bps/relax/scene
+   #:bps/relax/timedb
    ))
