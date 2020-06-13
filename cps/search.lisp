@@ -60,6 +60,7 @@ of procedures.
 
 (defstruct (problem (:PRINT-FUNCTION
                      (lambda (pr str ignore)
+                       (declare (ignore ignore))
                        (format str "<Problem: ~A>" (pr-name pr))))
                     (:CONC-NAME pr-))
   name  ;; Something recognizable by user (person or system)
@@ -83,9 +84,10 @@ of procedures.
   )
 
 (defstruct (path (:PRINT-FUNCTION
-                 (lambda (inst str ignore)
-                  (format str "<path ~a>"
-                        (path-current inst)))))
+                  (lambda (inst str ignore)
+                    (declare (ignore ignore))
+                    (format str "<path ~a>"
+                            (path-current inst)))))
   (pr nil)            ; The problem it is part of.
   (current nil)       ; The current state
   (so-far nil)        ; Alternating states and operator instances
