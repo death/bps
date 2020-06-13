@@ -27,13 +27,13 @@
 ;;;; Interface
 
 ;; Some default values
-(defvar *scene-file* 
+(defvar *scene-file*
   #+ILS "/u/bps/code/relax/cube"
   #+PARC "virgo:/virgo/dekleer/bps/code/relax/cube"
   #+MCL "Macintosh HD:BPS:relax:cube"
   #+ACLPC "e:\\code\\relax\\cube")
 
-(defvar *jcatalog-file* 
+(defvar *jcatalog-file*
   #+ILS "/u/bps/code/relax/jcatalog.lisp"
   #+PARC "virgo:/virgo/dekleer/bps/code/relax/jcatalog.lisp"
   #+MCL "Macintosh HD:BPS:relax:jcatalog.lisp"
@@ -60,38 +60,38 @@
 ;;; under the *jlabel-table*
 
 (defstruct (jlabel
-	     (:PRINT-FUNCTION
-	       (lambda (jl st ignore) (declare (ignore ignore))
-		 (format st "~A-~A" 
-			 (jlabel-type jl) (jlabel-name jl)))))
-  (name nil)	;name of this label 
+             (:PRINT-FUNCTION
+               (lambda (jl st ignore) (declare (ignore ignore))
+                 (format st "~A-~A"
+                         (jlabel-type jl) (jlabel-name jl)))))
+  (name nil)    ;name of this label
   (type nil) ;type of junction it is associated with
   (lines nil))
 
 (defmacro Junction-labelling (type name &rest parts)
   `(let ((junc (make-jlabel
-		:NAME ',name
-		:TYPE ',type
-		:LINES (parse-junction-parts ',parts ',name
-					     #'(lambda (name role owner)
-						 name))))
-	 (entry nil))
+                :NAME ',name
+                :TYPE ',type
+                :LINES (parse-junction-parts ',parts ',name
+                                             #'(lambda (name role owner)
+                                                 name))))
+         (entry nil))
      (setq entry (assoc ',type *jlabel-table*))
      (unless entry
        (push (setq entry (cons ',type nil))
-	     *jlabel-table*))
+             *jlabel-table*))
      (setf (cdr entry) (cons junc (cdr entry)))
      junc))
 
 (defun read-junction-catalog (file)
   (let ((fpointer (open file))
-	(marker (list 'foo)))
+        (marker (list 'foo)))
     (setq *jlabel-table* nil)
     (do ((form (read fpointer nil marker)
-	       (read fpointer nil marker))
-	 (counter 0 (1+ counter)))
-	((eq form marker)
-	 (format t "~%~A read, ~D entries." file counter))
+               (read fpointer nil marker))
+         (counter 0 (1+ counter)))
+        ((eq form marker)
+         (format t "~%~A read, ~D entries." file counter))
       (eval form))))
 
 ;;;; Making the scene (so to speak)
@@ -112,69 +112,69 @@
    (unless (assoc type *jlabel-table*)
      (error "~%~A is unknown junction type ~A." name type))
    `(let ((parts (parse-junction-parts ',parts ',name 'fetch-junction-part))
-	  (name ',name) (type ',type)
-	  (junc nil) (jcon nil))
-	    (setq junc (build-cell name *scene* (cdr (assoc type *jlabel-table*))))
-;;	    (setf (getf (cell-plist junc) 'junction-type) type)
-;;	    (setf (getf (cell-plist junc) 'Parts) parts)
-	    (setq jcon (build-constraint (cons name type) *scene* #'update-junction))
-	    (setf (constraint-parts jcon) (cons junc parts))
-	    (add-constraint-cell junc jcon)
-	    (dolist (part-pair parts)
-	      (add-constraint-cell (cdr part-pair) jcon))))
+          (name ',name) (type ',type)
+          (junc nil) (jcon nil))
+            (setq junc (build-cell name *scene* (cdr (assoc type *jlabel-table*))))
+;;          (setf (getf (cell-plist junc) 'junction-type) type)
+;;          (setf (getf (cell-plist junc) 'Parts) parts)
+            (setq jcon (build-constraint (cons name type) *scene* #'update-junction))
+            (setf (constraint-parts jcon) (cons junc parts))
+            (add-constraint-cell junc jcon)
+            (dolist (part-pair parts)
+              (add-constraint-cell (cdr part-pair) jcon))))
 
 (defun parse-junction-parts (part-list owner to-do)
   (cond ((null part-list) nil)
-	((not (listp part-list))
-	 (error "~%Badly formatted junction part list -- ~A." part-list))
-	((and (keywordp (car part-list))
-	      (cadr part-list)
-	      (symbolp (cadr part-list)))
-	 (cons (cons (car part-list)
-		     (funcall to-do
-			      (cadr part-list) (car part-list) owner))
-	      (parse-junction-parts (cddr part-list) owner to-do)))
-	(t (error "~%~A incorrectly formed junction part list: ~A"
-			  owner part-list))))
+        ((not (listp part-list))
+         (error "~%Badly formatted junction part list -- ~A." part-list))
+        ((and (keywordp (car part-list))
+              (cadr part-list)
+              (symbolp (cadr part-list)))
+         (cons (cons (car part-list)
+                     (funcall to-do
+                              (cadr part-list) (car part-list) owner))
+              (parse-junction-parts (cddr part-list) owner to-do)))
+        (t (error "~%~A incorrectly formed junction part list: ~A"
+                          owner part-list))))
 
 (defun fetch-junction-part (part-name role owner)
   (let ((part (lookup-cell part-name *scene*)))
     (unless part
-	    (error "~A not found, claimed as ~A of ~A."
-		   part-name role owner))
+            (error "~A not found, claimed as ~A of ~A."
+                   part-name role owner))
     part))
 
 ;;;; Junction updater
 
 (defun update-junction (con)
   (let ((jcell (car (constraint-parts con)))
-	(lines (cdr (constraint-parts con))))
+        (lines (cdr (constraint-parts con))))
     (do ((jlabels (cdr (cell-value jcell)) (cdr jlabels))
-	 (jlabel (car (cell-value jcell)) (car jlabels))
-	 (possible-line-labels
-	   (mapcar #'(lambda (pair)
-		       (cons (car pair) nil)) lines)))
-	((null jlabel) ;Must propagate ruled out line labels.
-	 (dolist (line-label-entry possible-line-labels)
-	   (let ((line (cdr (assoc (car line-label-entry) lines)))
-		 (possible-labels (cdr line-label-entry)))
-	     (dolist (label *line-labels*)
-	       (unless (member label possible-labels)
-		 (queue-cell line :EXCLUDE label con))))))
+         (jlabel (car (cell-value jcell)) (car jlabels))
+         (possible-line-labels
+           (mapcar #'(lambda (pair)
+                       (cons (car pair) nil)) lines)))
+        ((null jlabel) ;Must propagate ruled out line labels.
+         (dolist (line-label-entry possible-line-labels)
+           (let ((line (cdr (assoc (car line-label-entry) lines)))
+                 (possible-labels (cdr line-label-entry)))
+             (dolist (label *line-labels*)
+               (unless (member label possible-labels)
+                 (queue-cell line :EXCLUDE label con))))))
       (cond ((check-junction-label jlabel lines) ;exclude this junction label
-	     (queue-cell jcell :EXCLUDE jlabel con))
-	    (t ;;store line labels associated with this junction
-	     ;;as being possible.
-	     (dolist (line-entry (jlabel-lines jlabel))
-	       (let ((oentry (assoc (car line-entry)
-				    possible-line-labels)))
-		 (pushnew (cdr line-entry) (cdr oentry)))))))))
+             (queue-cell jcell :EXCLUDE jlabel con))
+            (t ;;store line labels associated with this junction
+             ;;as being possible.
+             (dolist (line-entry (jlabel-lines jlabel))
+               (let ((oentry (assoc (car line-entry)
+                                    possible-line-labels)))
+                 (pushnew (cdr line-entry) (cdr oentry)))))))))
 
 (defun check-junction-label (jlabel lines)
   (dolist (line-entry (jlabel-lines jlabel))
     (let ((line (cdr (assoc (car line-entry) lines))))
-      (unless (member (cdr line-entry) (cell-value line)) 
-	(return t)))))
+      (unless (member (cdr line-entry) (cell-value line))
+        (return t)))))
 
 (defun show-junction (con)
   (format t "~% ~A constrains ~A" (constraint-name con) (cdr (constraint-parts con)))

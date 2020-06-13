@@ -66,7 +66,7 @@
 (t-transitivity d < <)
 (t-transitivity d > >)
 (t-transitivity d = d)
-(t-transitivity d d d) 
+(t-transitivity d d d)
 (t-transitivity d o < o m d s)
 (t-transitivity d oi > oi mi d f)
 (t-transitivity d m <)
@@ -91,7 +91,7 @@
 (t-transitivity di fi di)
 
 ;;; Table, continued
-;; O and OI 		     
+;; O and OI
 
 (t-transitivity o < <)
 (t-transitivity o > > oi di mi s)
@@ -124,7 +124,7 @@
 
 (t-transitivity m < <)
 (t-transitivity m > > oi mi
-		     di si)
+                     di si)
 (t-transitivity m d o d s)
 (t-transitivity m di <)
 (t-transitivity m o <)
@@ -203,11 +203,11 @@
 (t-transitivity fi di di)
 (t-transitivity fi o o)
 (t-transitivity fi oi oi
-		     di si)
+                     di si)
 (t-transitivity fi m m)
 (t-transitivity fi mi si oi di)
 (t-transitivity fi s o)
-(t-transitivity fi si di) 
+(t-transitivity fi si di)
 (t-transitivity fi f f fi =)
 (t-transitivity fi fi fi)
 (t-transitivity fi = fi)
