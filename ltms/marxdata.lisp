@@ -9,8 +9,6 @@
 ;;;;   Purpose: Data for figuring out which Marx Brother was which
 ;;;; ------------------------------------------------------------------------------
 
-(in-package :COMMON-LISP-USER)
-
 ;; Here are the constraints, from page 648-649 of Building Problem Solvers:
 ;; 1. The pianist, harpist, and talker are distinct brothers.
 ;; 2. The brother who is fond of money is distinct from the one
@@ -22,7 +20,7 @@
 ;; 6. Harpo is always silent.
 ;; 7. Chico plays the piano.
 
-;; We could simply write a large set of rules that trigger on pairs of 
+;; We could simply write a large set of rules that trigger on pairs of
 ;; assertions to implement these constraints, but that isn't very elegant
 ;; and provides many opportunities for error.  Instead, we use explicit
 ;; higher-order relations to state the constraints in a concise manner,
@@ -78,4 +76,3 @@
 (rule ((:true (same-entity ?attribute1 ?attribute2) :var ?hor)
        (:true (?attribute1 ?obj) :var ?f1))
    (rassert! (:implies (:and ?hor ?f1) (?attribute2 ?obj))))
-
